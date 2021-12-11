@@ -1,0 +1,17 @@
+{
+  "verbose": true,
+  "ignore": [
+    "dist/*",
+    ".git",
+    ".vscode",
+    "node_modules/**/node_modules",
+    "**/__test__/**"
+  ],
+  "watch": [
+    "src/*",
+    ".env"
+  ],
+  "exec": "make start",
+  "ext": "js,json,ts,env",
+  "delay": 2000
+}
