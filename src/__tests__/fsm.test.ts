@@ -1,6 +1,7 @@
 import {
-  State, DeterministicFinitAutomachine, Input, RESET, NondeterministicFiniteAutomachine, EPSILON,
+  DeterministicFinitAutomachine, EPSILON, Input, NondeterministicFiniteAutomachine, RESET, State,
 } from '@/FiniteStateMachine';
+import { ExtendMap, ExtendSet } from '@/utils';
 
 describe('FiniteStateMachine', () => {
   const q1 = new State('q1');
@@ -13,35 +14,35 @@ describe('FiniteStateMachine', () => {
   test('test DFA', () => {
     const M = new DeterministicFinitAutomachine(
       'M',
-      new Map<State, Map<Input, State>>([
+      new ExtendMap<State, ExtendMap<Input, State>>([
         [
           q1,
-          new Map<Input, State>([
+          new ExtendMap<Input, State>([
             [i0, q1],
             [i1, q2],
           ]),
         ],
         [
           q2,
-          new Map<Input, State>([
+          new ExtendMap<Input, State>([
             [i0, q3],
             [i1, q2],
           ]),
         ],
         [
           q3,
-          new Map<Input, State>([
+          new ExtendMap<Input, State>([
             [i0, q2],
             [i1, q2],
           ]),
         ],
       ]),
       q1,
-      new Set([q2]),
+      new ExtendSet([q2]),
     );
 
-    expect(M.avaliableStates.vals()).toEqual([q1, q2, q3]);
-    expect(M.avaliableInputs.vals()).toEqual([i0, i1]);
+    expect(M.avaliableStates.vs()).toEqual([q1, q2, q3]);
+    expect(M.avaliableInputs.vs()).toEqual([i0, i1]);
     expect(M.next(i0)).toBe(q1);
     expect(M.run([])).toEqual([q1]);
 
@@ -89,49 +90,49 @@ describe('FiniteStateMachine', () => {
   test('test DFA', () => {
     const M = new NondeterministicFiniteAutomachine(
       'M',
-      new Map<State, Map<Input, Set<State>>>([
+      new ExtendMap<State, ExtendMap<Input, ExtendSet<State>>>([
         [
           q1,
-          new Map<Input, Set<State>>([
-            [i0, new Set([q1])],
-            [i1, new Set([q1, q2])],
-            [EPSILON, new Set()],
+          new ExtendMap<Input, ExtendSet<State>>([
+            [i0, new ExtendSet([q1])],
+            [i1, new ExtendSet([q1, q2])],
+            [EPSILON, new ExtendSet()],
           ]),
         ],
         [
           q2,
-          new Map<Input, Set<State>>([
-            [i0, new Set([q2])],
-            [i1, new Set()],
-            [EPSILON, new Set([q3])],
+          new ExtendMap<Input, ExtendSet<State>>([
+            [i0, new ExtendSet([q2])],
+            [i1, new ExtendSet()],
+            [EPSILON, new ExtendSet([q3])],
           ]),
         ],
         [
           q3,
-          new Map<Input, Set<State>>([
-            [i0, new Set()],
-            [i1, new Set([q1])],
-            [EPSILON, new Set()],
+          new ExtendMap<Input, ExtendSet<State>>([
+            [i0, new ExtendSet()],
+            [i1, new ExtendSet([q1])],
+            [EPSILON, new ExtendSet()],
           ]),
         ],
         [
           q4,
-          new Map<Input, Set<State>>([
-            [i0, new Set([q4])],
-            [i1, new Set([q4])],
-            [EPSILON, new Set()],
+          new ExtendMap<Input, ExtendSet<State>>([
+            [i0, new ExtendSet([q4])],
+            [i1, new ExtendSet([q4])],
+            [EPSILON, new ExtendSet()],
           ]),
         ],
       ]),
       q1,
-      new Set([q4]),
+      new ExtendSet([q4]),
     );
 
-    expect(M.avaliableStates.vals()).toEqual([q1, q2, q3, q4]);
-    expect(M.avaliableInputs.vals()).toEqual([i0, i1, EPSILON]);
+    expect(M.avaliableStates.vs()).toEqual([q1, q2, q3, q4]);
+    expect(M.avaliableInputs.vs()).toEqual([i0, i1, EPSILON]);
 
-    expect(M.next(RESET).vals()).toEqual([]);
-    expect(M.next(i1, q1).vals()).toEqual([q1, q2]);
+    expect(M.next(RESET).vs()).toEqual([]);
+    expect(M.next(i1, q1).vs()).toEqual([q1, q2]);
 
     expect(M.isFinal(q2)).toBe(false);
   });

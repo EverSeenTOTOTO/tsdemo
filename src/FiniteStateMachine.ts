@@ -1,5 +1,5 @@
 /* eslint-disable max-classes-per-file */
-import '@/utils';
+import { ExtendSet, ExtendMap } from '@/utils';
 
 export class State {
   name: string;
@@ -7,21 +7,13 @@ export class State {
   constructor(name: string) {
     this.name = name;
   }
-
-  toString() {
-    return `State(${this.name})`;
-  }
 }
 
 export class Input {
-  letter: string;
+  name: string;
 
-  constructor(letter: string) {
-    this.letter = letter;
-  }
-
-  toString() {
-    return `Input(${this.letter})`;
+  constructor(name: string) {
+    this.name = name;
   }
 }
 
@@ -29,16 +21,16 @@ export const RESET = new Input('<RESET>');
 export const EPSILON = new Input('<EPSILON>');
 
 // 确定性有穷自动机
-export class DeterministicFinitAutomachine {
+export class DeterministicFinitAutomachine<S extends State, I extends Input> {
   readonly name: string;
 
-  readonly transforms: Map<State, Map<Input, State>>;
+  readonly transforms: ExtendMap<S, ExtendMap<I, S>>;
 
-  readonly initialState: State;
+  readonly initialState: S;
 
-  readonly finalStates: Set<State>;
+  readonly finalStates: ExtendSet<S>;
 
-  constructor(name: string, transforms: Map<State, Map<Input, State>>, initialState: State, finalStates: Set<State>) {
+  constructor(name: string, transforms: ExtendMap<S, ExtendMap<I, S>>, initialState: S, finalStates: ExtendSet<S>) {
     this.name = name;
     this.transforms = transforms;
     this.initialState = initialState;
@@ -46,27 +38,27 @@ export class DeterministicFinitAutomachine {
   }
 
   get avaliableStates() {
-    return new Set(this.transforms.keys());
+    return new ExtendSet(this.transforms.keys());
   }
 
   get avaliableInputs() {
-    return new Set(this.transforms.vals()
+    return new ExtendSet(this.transforms.vs()
       .map((transform) => [...transform.keys()])
-      .reduce((prev, curr) => [...curr, ...prev], [])
-      .uniq());
+      .reduce((prev, curr) => [...curr, ...prev], []));
   }
 
-  isFinal(state: State) {
+  isFinal(state: S) {
     return this.finalStates.has(state);
   }
 
   // 给定一个状态，跳转下一个状态
-  next(input: Input, current?: State) {
+  next(input: I, current?: S) {
     const currentState = current ?? this.initialState;
 
     if (input === RESET) {
       return this.initialState;
     }
+
     const nextState = this.transforms.get(currentState)?.get(input);
 
     if (nextState) {
@@ -74,14 +66,14 @@ export class DeterministicFinitAutomachine {
     }
 
     if (__DEV__) {
-      console.warn(`Unrecognized input for ${this.name}: ${input.letter}`);
+      console.warn(`Unrecognized input for ${this.name}: ${input.name}`);
     }
 
     return currentState;
   }
 
   // 给定一个输入串执行
-  run(inputs: Input[], current?: State) {
+  run(inputs: I[], current?: S) {
     const currentState = current ?? this.initialState;
     const states = [currentState];
 
@@ -94,16 +86,16 @@ export class DeterministicFinitAutomachine {
 }
 
 // NFA
-export class NondeterministicFiniteAutomachine {
+export class NondeterministicFiniteAutomachine<S extends State, I extends Input> {
   readonly name: string;
 
-  private readonly transforms: Map<State, Map<Input, Set<State>>>;
+  private readonly transforms: ExtendMap<S, ExtendMap<I, ExtendSet<S>>>;
 
-  readonly initialState: State;
+  readonly initialState: S;
 
-  readonly finalStates: Set<State>;
+  readonly finalStates: ExtendSet<S>;
 
-  constructor(name: string, transforms: Map<State, Map<Input, Set<State>>>, initialState: State, finalStates: Set<State>) {
+  constructor(name: string, transforms: ExtendMap<S, ExtendMap<I, ExtendSet<S>>>, initialState: S, finalStates: ExtendSet<S>) {
     this.name = name;
     this.transforms = transforms;
     this.initialState = initialState;
@@ -111,25 +103,24 @@ export class NondeterministicFiniteAutomachine {
   }
 
   get avaliableStates() {
-    return new Set(this.transforms.keys());
+    return new ExtendSet(this.transforms.keys());
   }
 
   get avaliableInputs() {
-    return new Set(this.transforms.vals()
+    return new ExtendSet(this.transforms.vs()
       .map((transform) => [...transform.keys()])
-      .reduce((prev, curr) => [...curr, ...prev], [])
-      .uniq());
+      .reduce((prev, curr) => [...curr, ...prev], []));
   }
 
-  isFinal(state:State) {
+  isFinal(state:S) {
     return this.finalStates.has(state);
   }
 
   // 给定一个状态，跳转下一个状态
-  next(input: Input, current?: State) {
+  next(input: I, current?: S) {
     const currentState = current ?? this.initialState;
     const nextState = this.transforms.get(currentState)?.get(input);
 
-    return nextState ?? new Set<State>();
+    return nextState ?? new ExtendSet<S>();
   }
 }

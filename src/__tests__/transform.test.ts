@@ -2,8 +2,9 @@ import {
   EPSILON, Input, NondeterministicFiniteAutomachine, State,
 } from '@/FiniteStateMachine';
 import {
-  getNextStates, getSubset, getSubsetState, NFA2DFA, SubState,
+  getSubsets, getNextStates, NFA2DFA, findStateSetInSubsets, StateSet,
 } from '@/Transform';
+import { ExtendMap, ExtendSet } from '@/utils';
 
 describe('test transform', () => {
   const q1 = new State('q1');
@@ -13,60 +14,65 @@ describe('test transform', () => {
   const b = new Input('b');
 
   test('test getSubset', () => {
-    expect(getSubset(new Set<State>()).vals().length).toBe(1);
-    expect(getSubset(new Set([q1, q2])).vals().length).toBe(4);
-    expect(getSubset(new Set([q1, q2, q3])).vals().length).toBe(2 ** 3);
-    expect(getSubset(new Set([q1, q2, q1, q2, q3])).vals().length).toBe(2 ** 3);
+    expect(getSubsets(new ExtendSet<State>()).vs().length).toBe(1);
+    expect(getSubsets(new ExtendSet([q1, q2])).vs().length).toBe(4);
+    expect(getSubsets(new ExtendSet([q1, q2, q3])).vs().length).toBe(2 ** 3);
+    expect(getSubsets(new ExtendSet([q1, q2, q1, q2, q3])).vs().length).toBe(2 ** 3);
   });
 
   test('test getNextStates', () => {
     const N = new NondeterministicFiniteAutomachine(
       'N',
-      new Map<State, Map<Input, Set<State>>>([
+      new ExtendMap<State, ExtendMap<Input, ExtendSet<State>>>([
         [
           q1,
-          new Map([
-            [EPSILON, new Set([q3])],
-            [a, new Set()],
-            [b, new Set([q2])],
+          new ExtendMap([
+            [EPSILON, new ExtendSet([q3])],
+            [a, new ExtendSet()],
+            [b, new ExtendSet([q2])],
           ]),
         ],
         [
           q2,
-          new Map([
-            [EPSILON, new Set()],
-            [a, new Set([q2, q3])],
-            [b, new Set([q3])],
+          new ExtendMap([
+            [EPSILON, new ExtendSet()],
+            [a, new ExtendSet([q2, q3])],
+            [b, new ExtendSet([q3])],
           ]),
         ],
         [
           q3,
-          new Map([
-            [EPSILON, new Set([q2])],
-            [a, new Set([q1])],
-            [b, new Set()],
+          new ExtendMap([
+            [EPSILON, new ExtendSet([q2])],
+            [a, new ExtendSet([q1])],
+            [b, new ExtendSet()],
           ]),
         ],
       ]),
       q1,
-      new Set([q1]),
+      new ExtendSet([q1]),
     );
 
-    expect(getNextStates(N, EPSILON, q1).vals()).toEqual([q3, q2]);
-    expect(getNextStates(N, a, q2).vals()).toEqual([
+    expect(getNextStates(N, EPSILON, q1).vs()).toEqual([q3, q2]);
+    expect(getNextStates(N, a, q2).vs()).toEqual([
       q2, q3,
     ]);
-    expect(getNextStates(N, a, q3).vals()).toEqual([
+    expect(getNextStates(N, a, q3).vs()).toEqual([
       q1, q3, q2,
     ]);
 
     const M = NFA2DFA(N);
 
-    const sq1 = getSubsetState(M.avaliableStates as Set<SubState>, [q1]);
-    const sq1q2 = getSubsetState(M.avaliableStates as Set<SubState>, [q1, q2]);
+    const sq1 = findStateSetInSubsets(M.avaliableStates, new ExtendSet([q1]));
+    const sq1q2 = findStateSetInSubsets(M.avaliableStates, new ExtendSet([q1, q2]));
+    const sq2q3 = findStateSetInSubsets(M.avaliableStates, new ExtendSet([q2, q3]));
 
-    expect(N.avaliableInputs.vals()).toEqual(M.avaliableInputs.vals());
+    expect(N.avaliableInputs.vs()).toEqual([
+      EPSILON,
+      ...M.avaliableInputs.vs(),
+    ]);
     console.log(M.next(a, sq1));
     console.log(M.next(EPSILON, sq1q2));
+    console.log(M.next(a, sq2q3));
   });
 });
