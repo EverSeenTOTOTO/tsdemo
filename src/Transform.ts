@@ -18,7 +18,7 @@ export class StateSet extends State {
   }
 }
 
-const createStateSet = (s: ExtendSet<State>) => new StateSet(
+export const createStateSet = (s: ExtendSet<State>) => new StateSet(
   s.vs().map((state) => state.name).join(' '),
   s,
 );

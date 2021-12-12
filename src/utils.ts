@@ -52,4 +52,8 @@ export class ExtendSet<T> extends Set<T> {
 
     return true;
   }
+
+  static union<P>(...sets: ExtendSet<P>[]) {
+    return new ExtendSet<P>(sets.map((s) => s.vs()).reduce((prev, curr) => [...prev, ...curr], []));
+  }
 }
