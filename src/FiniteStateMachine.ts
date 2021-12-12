@@ -21,7 +21,7 @@ export const RESET = new Input('<RESET>');
 export const EPSILON = new Input('<EPSILON>');
 
 // 确定性有穷自动机
-export class DeterministicFinitAutomachine<S extends State, I extends Input> {
+export class DeterministicFinitAutomachine<S extends State = State, I extends Input = Input> {
   readonly name: string;
 
   readonly transforms: ExtendMap<S, ExtendMap<I, S>>;
@@ -47,11 +47,32 @@ export class DeterministicFinitAutomachine<S extends State, I extends Input> {
       .reduce((prev, curr) => [...curr, ...prev], []));
   }
 
+  // 根据每个状态，找到哪些状态可以到达它
+  get reverseTransform() {
+    const map = new ExtendMap<S, ExtendMap<I, S>>();
+
+    for (const state of this.avaliableStates) {
+      const prevStates = new ExtendMap<I, S>();
+
+      for (const prevState of this.avaliableStates) {
+        for (const input of this.avaliableInputs) {
+          if (this.next(input, prevState) === state) {
+            prevStates.set(input, prevState);
+          }
+        }
+      }
+
+      map.set(state, prevStates);
+    }
+
+    return map;
+  }
+
   isFinal(state: S) {
     return this.finalStates.has(state);
   }
 
-  // 给定一个状态，跳转下一个状态
+  // 给定一个状态和一个输入，返回下一个状态。若无法跳转返回undefined
   next(input: I, current?: S) {
     const currentState = current ?? this.initialState;
 
@@ -69,7 +90,7 @@ export class DeterministicFinitAutomachine<S extends State, I extends Input> {
       console.warn(`Unrecognized input for ${this.name}: ${input.name}`);
     }
 
-    return currentState;
+    return undefined;
   }
 
   // 给定一个输入串执行
@@ -86,10 +107,10 @@ export class DeterministicFinitAutomachine<S extends State, I extends Input> {
 }
 
 // NFA
-export class NondeterministicFiniteAutomachine<S extends State, I extends Input> {
+export class NondeterministicFiniteAutomachine<S extends State = State, I extends Input = Input> {
   readonly name: string;
 
-  private readonly transforms: ExtendMap<S, ExtendMap<I, ExtendSet<S>>>;
+  readonly transforms: ExtendMap<S, ExtendMap<I, ExtendSet<S>>>;
 
   readonly initialState: S;
 
@@ -116,7 +137,7 @@ export class NondeterministicFiniteAutomachine<S extends State, I extends Input>
     return this.finalStates.has(state);
   }
 
-  // 给定一个状态，跳转下一个状态
+  // 给定一个状态和一个输入，返回可到达的状态集合，若无法跳转返回空
   next(input: I, current?: S) {
     const currentState = current ?? this.initialState;
     const nextState = this.transforms.get(currentState)?.get(input);

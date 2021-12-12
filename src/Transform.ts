@@ -57,7 +57,7 @@ export const findStateSetInSubsets = (sets: ExtendSet<StateSet>, states: ExtendS
   }
 
   if (__DEV__) {
-    console.warn(`Cannot find state set in subsets:${states}`);
+    console.warn(`Cannot find state set in subsets: ${JSON.stringify(states.vs())}`);
   }
 
   return createStateSet(states);
@@ -89,6 +89,12 @@ export function getEpsilonNextStates(nfa: NondeterministicFiniteAutomachine, cur
 }
 
 // 给定一个状态current和一个输入input，得到输出状态集合
+/**
+ * @param {NondeterministicFiniteAutomachine} nfa - NFA
+ * @param {Input} input - 输入
+ * @param {State} state - 当前状态
+ * @returns {ExtendSet<State>} 下一个状态集合
+ */
 export function getNextStates(nfa: NondeterministicFiniteAutomachine, input: Input, current: State): ExtendSet<State>;
 export function getNextStates(nfa: NondeterministicFiniteAutomachine, input: Input, current: ExtendSet<State>): ExtendSet<State>;
 export function getNextStates(nfa: NondeterministicFiniteAutomachine, input: Input, current: State|ExtendSet<State>) {
@@ -133,8 +139,8 @@ export const NFA2DFA = (nfa: NondeterministicFiniteAutomachine) => {
     for (const input of nfa.avaliableInputs) {
       if (input === EPSILON) continue;
 
-      const nestStates = getNextStates(nfa, input, subState);
-      const nextState = findStateSetInSubsets(subsets, nestStates);
+      const nextStates = getNextStates(nfa, input, subState.states);
+      const nextState = findStateSetInSubsets(subsets, nextStates);
 
       transform.set(input, nextState);
     }
@@ -142,10 +148,23 @@ export const NFA2DFA = (nfa: NondeterministicFiniteAutomachine) => {
     map.set(subState, transform);
   }
 
-  return new DeterministicFinitAutomachine(
+  const dfa = new DeterministicFinitAutomachine(
     nfa.name,
     map,
     initialState,
     finalStates,
   );
+
+  // 移除无法到达的状态
+  for (const [state, transform] of dfa.reverseTransform) {
+    if (transform.length === 0 && dfa.initialState !== state) {
+      dfa.transforms.delete(state);
+
+      if (__DEV__) {
+        console.info(`Removed unreachable state ${state.name}`);
+      }
+    }
+  }
+
+  return dfa;
 };

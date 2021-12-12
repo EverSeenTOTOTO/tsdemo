@@ -48,7 +48,7 @@ describe('FiniteStateMachine', () => {
 
     let currentState = M.initialState;
     const next = (input: Input) => {
-      currentState = M.next(input, currentState);
+      currentState = M.next(input, currentState) ?? currentState;
     };
 
     next(i1);
