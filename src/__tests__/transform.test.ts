@@ -65,16 +65,16 @@ describe('test transform', () => {
   test('test NFA2DFA', () => {
     const M = NFA2DFA(N);
 
-    const sempty = findStateSetInSubsets(M.avaliableStates, new ExtendSet());
-    const sq2 = findStateSetInSubsets(M.avaliableStates, new ExtendSet([q2]));
-    const sq3 = findStateSetInSubsets(M.avaliableStates, new ExtendSet([q3]));
-    const sq2q3 = findStateSetInSubsets(M.avaliableStates, new ExtendSet([q2, q3]));
-    const sq1q3 = findStateSetInSubsets(M.avaliableStates, new ExtendSet([q1, q3]));
-    const sq1q2q3 = findStateSetInSubsets(M.avaliableStates, new ExtendSet([q1, q2, q3]));
+    const sempty = findStateSetInSubsets(M.stateSet, new ExtendSet());
+    const sq2 = findStateSetInSubsets(M.stateSet, new ExtendSet([q2]));
+    const sq3 = findStateSetInSubsets(M.stateSet, new ExtendSet([q3]));
+    const sq2q3 = findStateSetInSubsets(M.stateSet, new ExtendSet([q2, q3]));
+    const sq1q3 = findStateSetInSubsets(M.stateSet, new ExtendSet([q1, q3]));
+    const sq1q2q3 = findStateSetInSubsets(M.stateSet, new ExtendSet([q1, q2, q3]));
 
-    expect(N.avaliableInputs.vs()).toEqual([
+    expect(N.inputSet.vs()).toEqual([
       EPSILON,
-      ...M.avaliableInputs.vs(),
+      ...M.inputSet.vs(),
     ]);
     expect(M.next(a, sempty)).toBe(sempty);
     expect(M.next(b, sempty)).toBe(sempty);

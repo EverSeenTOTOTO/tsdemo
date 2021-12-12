@@ -59,7 +59,7 @@ describe('test Operation', () => {
 
     const U = union(N1, N2);
 
-    expect(U.initialState.name).toBe(`${N1.initialState.name} U ${N2.initialState.name}`);
+    expect(U.initialState.name).toBe(`${N1.initialState.name} | ${N2.initialState.name}`);
     expect(U.finalStates.vs()).toEqual([
       ...N1.finalStates.vs(),
       ...N2.finalStates.vs(),
@@ -181,5 +181,64 @@ describe('test Operation', () => {
     expect(S.next(EPSILON, q2).vs()).toEqual([
       q2, q1,
     ]);
+  });
+
+  test('test combine operations', () => {
+    const N1 = new NondeterministicFiniteAutomachine(
+      'N1',
+      new ExtendMap([
+        [
+          q1,
+          new ExtendMap([
+            [
+              a,
+              new ExtendSet([q2]),
+            ],
+          ]),
+        ],
+      ]),
+      q1,
+      new ExtendSet([q2]),
+    );
+    const N2 = new NondeterministicFiniteAutomachine(
+      'N2',
+      new ExtendMap([
+        [
+          q2,
+          new ExtendMap([
+            [
+              b,
+              new ExtendSet([q3]),
+            ],
+          ]),
+        ],
+      ]),
+      q2,
+      new ExtendSet([q3]),
+    );
+
+    const next = (nfa: NondeterministicFiniteAutomachine, input: Input, state?: State) => nfa.next(input, state).vs()[0];
+
+    const C = concat(N1, N2);
+    const accept = next(C, b, next(C, a));
+
+    expect(accept).toBe(q3);
+    expect(next(N2, b, next(N1, a))).toBe(accept);
+
+    const S = star(C);
+    const once = (time: number) => {
+      let i = 0;
+      let state = S.initialState;
+      while (i < time) {
+        state = next(S, EPSILON, next(S, b, next(S, a)));
+        i += 1;
+      }
+
+      state = next(S, a, state);
+      return state;
+    };
+
+    expect(once(4)).toBe(q2);
+    expect(once(1)).toBe(once(99));
   });
 });

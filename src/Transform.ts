@@ -124,7 +124,7 @@ export function getNextStates(nfa: NondeterministicFiniteAutomachine, input: Inp
  * @returns {DeterministicFinitAutomachine} DFA
  */
 export const NFA2DFA = (nfa: NondeterministicFiniteAutomachine) => {
-  const subsets = getSubsets(nfa.avaliableStates);
+  const subsets = getSubsets(nfa.stateSet);
   // DFA的起始状态为NFA的起始状态加上该状态经过EPSILON到达的状态集合
   const initialState = findStateSetInSubsets(subsets, getEpsilonNextStates(nfa, nfa.initialState));
   // DFA的终止状态为subsets中所有包含NFA的至少一个接受状态的状态
@@ -144,7 +144,7 @@ export const NFA2DFA = (nfa: NondeterministicFiniteAutomachine) => {
   for (const subState of subsets) {
     const transform = new ExtendMap<Input, StateSet>();
 
-    for (const input of nfa.avaliableInputs) {
+    for (const input of nfa.inputSet) {
       if (input === EPSILON) continue;
 
       const nextStates = getNextStates(nfa, input, subState.states);

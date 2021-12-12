@@ -41,8 +41,8 @@ describe('FiniteStateMachine', () => {
       new ExtendSet([q2]),
     );
 
-    expect(M.avaliableStates.vs()).toEqual([q1, q2, q3]);
-    expect(M.avaliableInputs.vs()).toEqual([i0, i1]);
+    expect(M.stateSet.vs()).toEqual([q1, q2, q3]);
+    expect(M.inputSet.vs()).toEqual([i0, i1]);
     expect(M.next(i0)).toBe(q1);
     expect(M.run([])).toEqual([q1]);
 
@@ -128,8 +128,8 @@ describe('FiniteStateMachine', () => {
       new ExtendSet([q4]),
     );
 
-    expect(M.avaliableStates.vs()).toEqual([q1, q2, q3, q4]);
-    expect(M.avaliableInputs.vs()).toEqual([i0, i1, EPSILON]);
+    expect(M.stateSet.vs()).toEqual([q1, q2, q3, q4]);
+    expect(M.inputSet.vs()).toEqual([i0, i1, EPSILON]);
 
     expect(M.next(RESET).vs()).toEqual([]);
     expect(M.next(i1, q1).vs()).toEqual([q1, q2]);

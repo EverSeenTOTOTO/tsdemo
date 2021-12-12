@@ -8,25 +8,25 @@ import { ExtendMap, ExtendSet } from '@/utils';
 // 并运算
 export const union = (a: NondeterministicFiniteAutomachine, b: NondeterministicFiniteAutomachine) => {
   // 新的起始状态
-  const initialState = new State(`${a.initialState.name} U ${b.initialState.name}`);
+  const initialState = new State(`${a.initialState.name} | ${b.initialState.name}`);
   // 新的接受状态是a和b的接受状态并集
   const finalStates = ExtendSet.union(a.finalStates, b.finalStates);
 
-  const avaliableInputs = ExtendSet.union(a.avaliableInputs, b.avaliableInputs);
+  const inputSet = ExtendSet.union(a.inputSet, b.inputSet);
 
   // 新的起始状态经过EPSILON到达a和b
-  avaliableInputs.add(EPSILON);
+  inputSet.add(EPSILON);
 
-  const avaliableStates = ExtendSet.union(a.avaliableStates, b.avaliableStates);
+  const stateSet = ExtendSet.union(a.stateSet, b.stateSet);
 
-  avaliableStates.add(initialState);
+  stateSet.add(initialState);
 
   // 计算新的转换函数
   const map = new ExtendMap<State, ExtendMap<Input, ExtendSet<State>>>();
-  for (const state of avaliableStates) {
+  for (const state of stateSet) {
     const transform = new ExtendMap<Input, ExtendSet<State>>();
 
-    for (const input of avaliableInputs) {
+    for (const input of inputSet) {
       if (state === initialState) { // 如果是新的起始状态，经过EPSILON到达a和b的起始状态
         if (input === EPSILON) {
           transform.set(input, new ExtendSet([a.initialState, b.initialState]));
@@ -45,7 +45,7 @@ export const union = (a: NondeterministicFiniteAutomachine, b: NondeterministicF
   }
 
   return new NondeterministicFiniteAutomachine(
-    `${a.name} U ${b.name}`,
+    `${a.name} | ${b.name}`,
     map,
     initialState,
     finalStates,
@@ -54,20 +54,20 @@ export const union = (a: NondeterministicFiniteAutomachine, b: NondeterministicF
 
 // 连接运算
 export const concat = (a: NondeterministicFiniteAutomachine, b: NondeterministicFiniteAutomachine) => {
-  const avaliableInputs = ExtendSet.union(a.avaliableInputs, b.avaliableInputs);
+  const inputSet = ExtendSet.union(a.inputSet, b.inputSet);
 
   // 新的起始状态经过EPSILON到达a和b
-  avaliableInputs.add(EPSILON);
+  inputSet.add(EPSILON);
 
-  const avaliableStates = ExtendSet.union(a.avaliableStates, b.avaliableStates);
+  const stateSet = ExtendSet.union(a.stateSet, b.stateSet);
 
   // 计算新的转换函数
   const map = new ExtendMap<State, ExtendMap<Input, ExtendSet<State>>>();
 
-  for (const state of avaliableStates) {
+  for (const state of stateSet) {
     const transform = new ExtendMap<Input, ExtendSet<State>>();
 
-    for (const input of avaliableInputs) {
+    for (const input of inputSet) {
       const nextStates = ExtendSet.union(a.next(input, state), b.next(input, state));
 
       if (a.finalStates.has(state) && input === EPSILON) {
@@ -92,24 +92,24 @@ export const concat = (a: NondeterministicFiniteAutomachine, b: Nondeterministic
 // 星号运算
 export const star = (nfa: NondeterministicFiniteAutomachine) => {
   // 新的起始状态
-  const initialState = new State(`${nfa.initialState}*`);
+  const initialState = new State(`${nfa.initialState.name}*`);
 
-  const avaliableInputs = new ExtendSet(nfa.avaliableInputs);
+  const inputSet = new ExtendSet(nfa.inputSet);
 
   // 新的起始状态经过EPSILON到达原有的起始状态
-  avaliableInputs.add(EPSILON);
+  inputSet.add(EPSILON);
 
-  const avaliableStates = new ExtendSet(nfa.avaliableStates);
+  const stateSet = new ExtendSet(nfa.stateSet);
 
-  avaliableStates.add(initialState);
+  stateSet.add(initialState);
 
   // 计算新的转换函数
   const map = new ExtendMap<State, ExtendMap<Input, ExtendSet<State>>>();
 
-  for (const state of avaliableStates) {
+  for (const state of stateSet) {
     const transform = new ExtendMap<Input, ExtendSet<State>>();
 
-    for (const input of avaliableInputs) {
+    for (const input of inputSet) {
       if (state === initialState) {
         if (input === EPSILON) { // 新的起始状态经过EPSILON到达旧的起始状态
           transform.set(input, new ExtendSet([nfa.initialState]));

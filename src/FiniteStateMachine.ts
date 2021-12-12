@@ -42,11 +42,11 @@ export class DeterministicFinitAutomachine<S extends State = State, I extends In
     this.finalStates = finalStates;
   }
 
-  get avaliableStates() {
+  get stateSet() {
     return new ExtendSet(this.transforms.keys());
   }
 
-  get avaliableInputs() {
+  get inputSet() {
     return new ExtendSet(this.transforms.vs()
       .map((transform) => [...transform.keys()])
       .reduce((prev, curr) => [...curr, ...prev], []));
@@ -56,11 +56,11 @@ export class DeterministicFinitAutomachine<S extends State = State, I extends In
   get reverseTransform() {
     const map = new ExtendMap<S, ExtendMap<I, S>>();
 
-    for (const state of this.avaliableStates) {
+    for (const state of this.stateSet) {
       const prevStates = new ExtendMap<I, S>();
 
-      for (const prevState of this.avaliableStates) {
-        for (const input of this.avaliableInputs) {
+      for (const prevState of this.stateSet) {
+        for (const input of this.inputSet) {
           if (this.next(input, prevState) === state) {
             prevStates.set(input, prevState);
           }
@@ -131,11 +131,11 @@ export class NondeterministicFiniteAutomachine<S extends State = State, I extend
     this.finalStates = finalStates;
   }
 
-  get avaliableStates() {
+  get stateSet() {
     return new ExtendSet(this.transforms.keys());
   }
 
-  get avaliableInputs() {
+  get inputSet() {
     return new ExtendSet(this.transforms.vs()
       .map((transform) => [...transform.keys()])
       .reduce((prev, curr) => [...curr, ...prev], []));
