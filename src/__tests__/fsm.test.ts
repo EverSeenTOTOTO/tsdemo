@@ -87,7 +87,7 @@ describe('FiniteStateMachine', () => {
     ]);
   });
 
-  test('test DFA', () => {
+  test('test NFA', () => {
     const M = new NondeterministicFiniteAutomachine(
       'M',
       new ExtendMap<State, ExtendMap<Input, ExtendSet<State>>>([

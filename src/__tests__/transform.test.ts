@@ -20,39 +20,39 @@ describe('test transform', () => {
     expect(getSubsets(new ExtendSet([q1, q2, q1, q2, q3])).vs().length).toBe(2 ** 3);
   });
 
-  test('test getNextStates', () => {
-    const N = new NondeterministicFiniteAutomachine(
-      'N',
-      new ExtendMap<State, ExtendMap<Input, ExtendSet<State>>>([
-        [
-          q1,
-          new ExtendMap([
-            [EPSILON, new ExtendSet([q3])],
-            [a, new ExtendSet()],
-            [b, new ExtendSet([q2])],
-          ]),
-        ],
-        [
-          q2,
-          new ExtendMap([
-            [EPSILON, new ExtendSet()],
-            [a, new ExtendSet([q2, q3])],
-            [b, new ExtendSet([q3])],
-          ]),
-        ],
-        [
-          q3,
-          new ExtendMap([
-            [EPSILON, new ExtendSet([q2])],
-            [a, new ExtendSet([q1])],
-            [b, new ExtendSet()],
-          ]),
-        ],
-      ]),
-      q1,
-      new ExtendSet([q1]),
-    );
+  const N = new NondeterministicFiniteAutomachine(
+    'N',
+    new ExtendMap<State, ExtendMap<Input, ExtendSet<State>>>([
+      [
+        q1,
+        new ExtendMap([
+          [EPSILON, new ExtendSet([q3])],
+          [a, new ExtendSet()],
+          [b, new ExtendSet([q2])],
+        ]),
+      ],
+      [
+        q2,
+        new ExtendMap([
+          [EPSILON, new ExtendSet()],
+          [a, new ExtendSet([q2, q3])],
+          [b, new ExtendSet([q3])],
+        ]),
+      ],
+      [
+        q3,
+        new ExtendMap([
+          [EPSILON, new ExtendSet([q2])],
+          [a, new ExtendSet([q1])],
+          [b, new ExtendSet()],
+        ]),
+      ],
+    ]),
+    q1,
+    new ExtendSet([q1]),
+  );
 
+  test('test getNextStates', () => {
     expect(getNextStates(N, EPSILON, q1).vs()).toEqual([q3, q2]);
     expect(getNextStates(N, a, q2).vs()).toEqual([
       q2, q3,
@@ -60,7 +60,9 @@ describe('test transform', () => {
     expect(getNextStates(N, a, q3).vs()).toEqual([
       q1, q3, q2,
     ]);
+  });
 
+  test('test NFA2DFA', () => {
     const M = NFA2DFA(N);
 
     const sempty = findStateSetInSubsets(M.avaliableStates, new ExtendSet());

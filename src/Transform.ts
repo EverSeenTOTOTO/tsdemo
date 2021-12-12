@@ -48,7 +48,7 @@ export const getSubsets = (stateSet: ExtendSet<State>) => {
   );
 };
 
-// 给定子集，在全部子集中找到相等的集合，避免new两个相同的集合
+// 给定子集，在全部子集中找到相等的集合，避免new两个相同的集合进行相等比较
 export const findStateSetInSubsets = (sets: ExtendSet<StateSet>, states: ExtendSet<State>) => {
   for (const set of sets) {
     if (ExtendSet.isSame(set.states, states)) {
@@ -63,7 +63,11 @@ export const findStateSetInSubsets = (sets: ExtendSet<StateSet>, states: ExtendS
   return createStateSet(states);
 };
 
-// 以一个状态出发经过0次或多次EPSILON得到的状态集合
+/**
+ * @param {NondeterministicFiniteAutomachine} nfa - NFA
+ * @param {ExtendSet<State>} current - 当前状态
+ * @returns {ExtendSet<State>} 经过EPSILON可到达的下一个状态集
+ */
 export function getEpsilonNextStates(nfa: NondeterministicFiniteAutomachine, current: ExtendSet<State>): ExtendSet<State>;
 export function getEpsilonNextStates(nfa: NondeterministicFiniteAutomachine, current: State): ExtendSet<State>;
 export function getEpsilonNextStates(nfa: NondeterministicFiniteAutomachine, current: State|ExtendSet<State>) {
@@ -88,7 +92,6 @@ export function getEpsilonNextStates(nfa: NondeterministicFiniteAutomachine, cur
   return nextStates;
 }
 
-// 给定一个状态current和一个输入input，得到输出状态集合
 /**
  * @param {NondeterministicFiniteAutomachine} nfa - NFA
  * @param {Input} input - 输入
@@ -115,11 +118,16 @@ export function getNextStates(nfa: NondeterministicFiniteAutomachine, input: Inp
   return nextStates;
 }
 
+/**
+ * 将NFA转换为等价的DFA
+ * @param {NondeterministicFiniteAutomachine} nfa - NFA
+ * @returns {DeterministicFinitAutomachine} DFA
+ */
 export const NFA2DFA = (nfa: NondeterministicFiniteAutomachine) => {
   const subsets = getSubsets(nfa.avaliableStates);
   // DFA的起始状态为NFA的起始状态加上该状态经过EPSILON到达的状态集合
   const initialState = findStateSetInSubsets(subsets, getEpsilonNextStates(nfa, nfa.initialState));
-  // DFA的终止状态为subsets中所有包含NFA的接受状态的状态
+  // DFA的终止状态为subsets中所有包含NFA的至少一个接受状态的状态
   const finalStates = new ExtendSet(subsets.vs().filter((s) => {
     for (const finalState of nfa.finalStates) {
       if (s.states.has(finalState)) {
@@ -132,7 +140,7 @@ export const NFA2DFA = (nfa: NondeterministicFiniteAutomachine) => {
   // 计算DFA的状态转移函数
   const map = new ExtendMap<StateSet, ExtendMap<Input, StateSet>>();
 
-  // 对于DFA中的每个状态subState，其集合中每个state经过input所能到达的state集合构成新的subState
+  // 对于DFA中的每个状态subState，其集合中每个state经过input所能到达的state集合构成新的subState，也就是下一个状态
   for (const subState of subsets) {
     const transform = new ExtendMap<Input, StateSet>();
 

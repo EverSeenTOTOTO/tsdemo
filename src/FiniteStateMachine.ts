@@ -1,6 +1,7 @@
 /* eslint-disable max-classes-per-file */
 import { ExtendSet, ExtendMap } from '@/utils';
 
+// 状态
 export class State {
   name: string;
 
@@ -9,6 +10,7 @@ export class State {
   }
 }
 
+// 输入
 export class Input {
   name: string;
 
@@ -24,10 +26,13 @@ export const EPSILON = new Input('<EPSILON>');
 export class DeterministicFinitAutomachine<S extends State = State, I extends Input = Input> {
   readonly name: string;
 
+  // 状态转换表
   readonly transforms: ExtendMap<S, ExtendMap<I, S>>;
 
+  // 初始状态
   readonly initialState: S;
 
+  // 接受状态集
   readonly finalStates: ExtendSet<S>;
 
   constructor(name: string, transforms: ExtendMap<S, ExtendMap<I, S>>, initialState: S, finalStates: ExtendSet<S>) {
@@ -68,6 +73,7 @@ export class DeterministicFinitAutomachine<S extends State = State, I extends In
     return map;
   }
 
+  // 判断一个状态是否在接受状态中
   isFinal(state: S) {
     return this.finalStates.has(state);
   }
@@ -99,7 +105,9 @@ export class DeterministicFinitAutomachine<S extends State = State, I extends In
     const states = [currentState];
 
     for (const input of inputs) {
-      states.push(this.next(input, states[states.length - 1]));
+      const prev = states[states.length - 1];
+
+      states.push(this.next(input, prev) ?? prev);
     }
 
     return states;
@@ -137,7 +145,7 @@ export class NondeterministicFiniteAutomachine<S extends State = State, I extend
     return this.finalStates.has(state);
   }
 
-  // 给定一个状态和一个输入，返回可到达的状态集合，若无法跳转返回空
+  // 给定一个状态和一个输入，返回可到达的状态集合，若无法跳转返回空集
   next(input: I, current?: S) {
     const currentState = current ?? this.initialState;
     const nextState = this.transforms.get(currentState)?.get(input);
