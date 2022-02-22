@@ -23,8 +23,18 @@ module.exports = {
     'no-console': 'off',
     'no-continue': 'off',
     'max-len': 'off',
+    'arrow-body-style': 'off',
     'no-restricted-syntax': 'off',
     'import/prefer-default-export': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
   },
+  overrides: [
+    {
+      files: ['src/web/**/*.ts'],
+      env: {
+        browser: true,
+        node: true,
+      },
+    },
+  ],
 };

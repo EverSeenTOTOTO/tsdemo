@@ -9,6 +9,7 @@
     "outDir": "dist/",
     "baseUrl": ".",
     "strict": true,
+    "allowJs": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
