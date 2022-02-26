@@ -1,8 +1,8 @@
 import {
-  EPSILON, Input, NondeterministicFiniteAutomachine, State,
+  Input, NondeterministicFiniteAutomachine, State,
 } from '@/FiniteStateMachine';
 import {
-  getSubsets, getNextStates, NFA2DFA, findStateSetInSubsets, StateSet,
+  getSubsets, getNextStates, NFA2DFA, findStateSetInSubsets,
 } from '@/Transform';
 import { ExtendMap, ExtendSet } from '@/utils';
 
@@ -26,7 +26,7 @@ describe('test transform', () => {
       [
         q1,
         new ExtendMap([
-          [EPSILON, new ExtendSet([q3])],
+          [Input.EPSILON, new ExtendSet([q3])],
           [a, new ExtendSet()],
           [b, new ExtendSet([q2])],
         ]),
@@ -34,7 +34,7 @@ describe('test transform', () => {
       [
         q2,
         new ExtendMap([
-          [EPSILON, new ExtendSet()],
+          [Input.EPSILON, new ExtendSet()],
           [a, new ExtendSet([q2, q3])],
           [b, new ExtendSet([q3])],
         ]),
@@ -42,7 +42,7 @@ describe('test transform', () => {
       [
         q3,
         new ExtendMap([
-          [EPSILON, new ExtendSet([q2])],
+          [Input.EPSILON, new ExtendSet([q2])],
           [a, new ExtendSet([q1])],
           [b, new ExtendSet()],
         ]),
@@ -53,7 +53,7 @@ describe('test transform', () => {
   );
 
   test('test getNextStates', () => {
-    expect(getNextStates(N, EPSILON, q1).vs()).toEqual([q3, q2]);
+    expect(getNextStates(N, Input.EPSILON, q1).vs()).toEqual([q3, q2]);
     expect(getNextStates(N, a, q2).vs()).toEqual([
       q2, q3,
     ]);
@@ -73,7 +73,7 @@ describe('test transform', () => {
     const sq1q2q3 = findStateSetInSubsets(M.stateSet, new ExtendSet([q1, q2, q3]));
 
     expect(N.inputSet.vs()).toEqual([
-      EPSILON,
+      Input.EPSILON,
       ...M.inputSet.vs(),
     ]);
     expect(M.next(a, sempty)).toBe(sempty);

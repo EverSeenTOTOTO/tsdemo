@@ -174,7 +174,10 @@ describe('test Operation', () => {
     const S = star(N);
 
     expect(S.name).toBe(`${N.name}*`);
-    expect(S.finalStates).toBe(N.finalStates);
+    expect(S.finalStates.vs()).toEqual([
+      ...N.finalStates.vs(),
+      S.initialState,
+    ]);
     expect(S.next(EPSILON, S.initialState).vs()).toEqual([
       q1,
     ]);

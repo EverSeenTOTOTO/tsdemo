@@ -31,7 +31,7 @@ export const union = (a: NondeterministicFiniteAutomachine, b: NondeterministicF
         if (input === EPSILON) {
           transform.set(input, new ExtendSet([a.initialState, b.initialState]));
         } else {
-          transform.set(input, new ExtendSet());
+          transform.set(input, ExtendSet.None);
         }
       } else {
         const nextA = a.next(input, state);
@@ -56,7 +56,6 @@ export const union = (a: NondeterministicFiniteAutomachine, b: NondeterministicF
 export const concat = (a: NondeterministicFiniteAutomachine, b: NondeterministicFiniteAutomachine) => {
   const inputSet = ExtendSet.union(a.inputSet, b.inputSet);
 
-  // 新的起始状态经过EPSILON到达a和b
   inputSet.add(EPSILON);
 
   const stateSet = ExtendSet.union(a.stateSet, b.stateSet);
@@ -94,6 +93,11 @@ export const star = (nfa: NondeterministicFiniteAutomachine) => {
   // 新的起始状态
   const initialState = new State(`${nfa.initialState.name}*`);
 
+  // 新的起始状态也是接受状态
+  const finalStates = new ExtendSet(nfa.finalStates);
+
+  finalStates.add(initialState);
+
   const inputSet = new ExtendSet(nfa.inputSet);
 
   // 新的起始状态经过EPSILON到达原有的起始状态
@@ -114,7 +118,7 @@ export const star = (nfa: NondeterministicFiniteAutomachine) => {
         if (input === EPSILON) { // 新的起始状态经过EPSILON到达旧的起始状态
           transform.set(input, new ExtendSet([nfa.initialState]));
         } else {
-          transform.set(input, new ExtendSet());
+          transform.set(input, ExtendSet.None);
         }
       } else if (nfa.finalStates.has(state) && input === EPSILON) { // 给旧的接受状态增加经过EPSILON到达旧的起始状态的转换
         const nextStates = nfa.next(input, state);
@@ -133,6 +137,6 @@ export const star = (nfa: NondeterministicFiniteAutomachine) => {
     `${nfa.name}*`,
     map,
     initialState,
-    nfa.finalStates,
+    finalStates,
   );
 };

@@ -17,6 +17,9 @@ export class ExtendMap<K, V> extends Map<K, V> {
   es() {
     return [...this.entries()];
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static None = new ExtendMap<any, any>();
 }
 
 export class ExtendSet<T> extends Set<T> {
@@ -31,11 +34,15 @@ export class ExtendSet<T> extends Set<T> {
   addMultiple(items: ExtendSet<T>): void;
   addMultiple(items: T[]): void;
   addMultiple(...items: T[]): void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   addMultiple(items: any): void {
     for (const item of items) {
       this.add(item);
     }
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static None: ExtendSet<any> = new ExtendSet();
 
   static isSame<P>(a: ExtendSet<P>, b: ExtendSet<P>) {
     for (const item of a) {

@@ -2,13 +2,13 @@
 import {
   State,
   NondeterministicFiniteAutomachine,
-  EPSILON,
   Input,
   DeterministicFinitAutomachine,
 } from '@/FiniteStateMachine';
 import { ExtendMap, ExtendSet } from '@/utils';
 
-export class StateSet extends State {
+// NFA转DFA时，会将若干个状态合并为一个新的状态
+export class MergedState extends State {
   states: ExtendSet<State>;
 
   constructor(name: string, states: ExtendSet<State>) {
@@ -18,7 +18,7 @@ export class StateSet extends State {
   }
 }
 
-export const createStateSet = (s: ExtendSet<State>) => new StateSet(
+export const createStateSet = (s: ExtendSet<State>) => new MergedState(
   s.vs().map((state) => state.name).join(' '),
   s,
 );
@@ -26,7 +26,7 @@ export const createStateSet = (s: ExtendSet<State>) => new StateSet(
 // 求一个集合的全部子集
 export const getSubsets = (stateSet: ExtendSet<State>) => {
   const states = stateSet.vs();
-  const set = new ExtendSet<ExtendSet<State>>([new ExtendSet()]);
+  const set = new ExtendSet<ExtendSet<State>>([ExtendSet.None]);
 
   const helper = (x: number, last: ExtendSet<State>) => {
     for (let y = x; y < states.length; ++y) {
@@ -48,8 +48,8 @@ export const getSubsets = (stateSet: ExtendSet<State>) => {
   );
 };
 
-// 给定子集，在全部子集中找到相等的集合，避免new两个相同的集合进行相等比较
-export const findStateSetInSubsets = (sets: ExtendSet<StateSet>, states: ExtendSet<State>) => {
+// 给定子集，在全部子集中找到相等的集合，避免new两个相同的集合进行相等比较，由于引用不同返回不等
+export const findStateSetInSubsets = (sets: ExtendSet<MergedState>, states: ExtendSet<State>) => {
   for (const set of sets) {
     if (ExtendSet.isSame(set.states, states)) {
       return set;
@@ -78,7 +78,7 @@ export function getEpsilonNextStates(nfa: NondeterministicFiniteAutomachine, cur
       if (!nextStates.has(state)) {
         nextStates.add(state);
 
-        helper(nfa.next(EPSILON, state));
+        helper(nfa.next(Input.EPSILON, state));
       }
     }
   };
@@ -123,7 +123,7 @@ export function getNextStates(nfa: NondeterministicFiniteAutomachine, input: Inp
  * @param {NondeterministicFiniteAutomachine} nfa - NFA
  * @returns {DeterministicFinitAutomachine} DFA
  */
-export const NFA2DFA = (nfa: NondeterministicFiniteAutomachine) => {
+export const NFA2DFA = (nfa: NondeterministicFiniteAutomachine): DeterministicFinitAutomachine<MergedState> => {
   const subsets = getSubsets(nfa.stateSet);
   // DFA的起始状态为NFA的起始状态加上该状态经过EPSILON到达的状态集合
   const initialState = findStateSetInSubsets(subsets, getEpsilonNextStates(nfa, nfa.initialState));
@@ -138,14 +138,14 @@ export const NFA2DFA = (nfa: NondeterministicFiniteAutomachine) => {
   }));
 
   // 计算DFA的状态转移函数
-  const map = new ExtendMap<StateSet, ExtendMap<Input, StateSet>>();
+  const map = new ExtendMap<MergedState, ExtendMap<Input, MergedState>>();
 
   // 对于DFA中的每个状态subState，其集合中每个state经过input所能到达的state集合构成新的subState，也就是下一个状态
   for (const subState of subsets) {
-    const transform = new ExtendMap<Input, StateSet>();
+    const transform = new ExtendMap<Input, MergedState>();
 
     for (const input of nfa.inputSet) {
-      if (input === EPSILON) continue;
+      if (input === Input.EPSILON) continue;
 
       const nextStates = getNextStates(nfa, input, subState.states);
       const nextState = findStateSetInSubsets(subsets, nextStates);

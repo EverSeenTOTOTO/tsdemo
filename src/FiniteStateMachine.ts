@@ -17,10 +17,11 @@ export class Input {
   constructor(name: string) {
     this.name = name;
   }
-}
 
-export const RESET = new Input('<RESET>');
-export const EPSILON = new Input('<EPSILON>');
+  static RESET = new Input('<reset>');
+
+  static EPSILON = new Input('<epsilon>');
+}
 
 // 确定性有穷自动机
 export class DeterministicFinitAutomachine<S extends State = State, I extends Input = Input> {
@@ -82,7 +83,7 @@ export class DeterministicFinitAutomachine<S extends State = State, I extends In
   next(input: I, current?: S) {
     const currentState = current ?? this.initialState;
 
-    if (input === RESET) {
+    if (input === Input.RESET) {
       return this.initialState;
     }
 

@@ -1,5 +1,5 @@
 import {
-  DeterministicFinitAutomachine, EPSILON, Input, NondeterministicFiniteAutomachine, RESET, State,
+  DeterministicFinitAutomachine, Input, NondeterministicFiniteAutomachine, State,
 } from '@/FiniteStateMachine';
 import { ExtendMap, ExtendSet } from '@/utils';
 
@@ -60,16 +60,16 @@ describe('FiniteStateMachine', () => {
 
     expect(currentState).toBe(q3);
 
-    next(RESET);
+    next(Input.RESET);
     next(new Input('2'));
 
     expect(currentState).toBe(M.initialState);
 
     const serial = M.run([
-      RESET,
+      Input.RESET,
       i1,
       i0,
-      RESET,
+      Input.RESET,
       i1,
       i1,
       i0,
@@ -96,7 +96,7 @@ describe('FiniteStateMachine', () => {
           new ExtendMap<Input, ExtendSet<State>>([
             [i0, new ExtendSet([q1])],
             [i1, new ExtendSet([q1, q2])],
-            [EPSILON, new ExtendSet()],
+            [Input.EPSILON, new ExtendSet()],
           ]),
         ],
         [
@@ -104,7 +104,7 @@ describe('FiniteStateMachine', () => {
           new ExtendMap<Input, ExtendSet<State>>([
             [i0, new ExtendSet([q2])],
             [i1, new ExtendSet()],
-            [EPSILON, new ExtendSet([q3])],
+            [Input.EPSILON, new ExtendSet([q3])],
           ]),
         ],
         [
@@ -112,7 +112,7 @@ describe('FiniteStateMachine', () => {
           new ExtendMap<Input, ExtendSet<State>>([
             [i0, new ExtendSet()],
             [i1, new ExtendSet([q1])],
-            [EPSILON, new ExtendSet()],
+            [Input.EPSILON, new ExtendSet()],
           ]),
         ],
         [
@@ -120,7 +120,7 @@ describe('FiniteStateMachine', () => {
           new ExtendMap<Input, ExtendSet<State>>([
             [i0, new ExtendSet([q4])],
             [i1, new ExtendSet([q4])],
-            [EPSILON, new ExtendSet()],
+            [Input.EPSILON, new ExtendSet()],
           ]),
         ],
       ]),
@@ -129,9 +129,9 @@ describe('FiniteStateMachine', () => {
     );
 
     expect(M.stateSet.vs()).toEqual([q1, q2, q3, q4]);
-    expect(M.inputSet.vs()).toEqual([i0, i1, EPSILON]);
+    expect(M.inputSet.vs()).toEqual([i0, i1, Input.EPSILON]);
 
-    expect(M.next(RESET).vs()).toEqual([]);
+    expect(M.next(Input.RESET).vs()).toEqual([]);
     expect(M.next(i1, q1).vs()).toEqual([q1, q2]);
 
     expect(M.isFinal(q2)).toBe(false);
