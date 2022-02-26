@@ -29,4 +29,7 @@ watch:
 test:
 	npx jest --coverage --silent
 
-.PHONY: lint clean build start test watch
+debug:
+	node --inspect-brk node_modules/jest/bin/jest.js --coverage --runInBand
+
+.PHONY: lint clean build start test watch debug web

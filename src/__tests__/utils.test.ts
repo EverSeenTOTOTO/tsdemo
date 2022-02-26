@@ -34,4 +34,19 @@ describe('test utils', () => {
 
     expect(set.length).toBe(3);
   });
+
+  test('test subsets', () => {
+    expect(ExtendSet.None.subsets().vs().map((each) => each.vs())).toEqual([[]]);
+    expect(new ExtendSet([1, 2, 3]).subsets().vs().map((each) => each.vs())).toEqual([
+      [],
+      [1],
+      [2],
+      [3],
+      [1, 2],
+      [1, 3],
+      [2, 3],
+      [1, 2, 3],
+    ]);
+    expect(new ExtendSet([1, 2, 3, 4, 5]).subsets().vs().length).toBe(2 ** 5);
+  });
 });

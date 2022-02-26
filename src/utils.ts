@@ -31,6 +31,26 @@ export class ExtendSet<T> extends Set<T> {
     return [...this.values()];
   }
 
+  // get all subsets
+  subsets() {
+    const values = this.vs();
+    const set = new ExtendSet([ExtendSet.None]);
+
+    const helper = (i: number, last: ExtendSet<T>) => {
+      for (let x = i; x < values.length; ++x) {
+        const current = new ExtendSet([...last.vs(), values[x]]);
+
+        set.add(current);
+
+        helper(x + 1, current);
+      }
+    };
+
+    helper(0, new ExtendSet());
+
+    return new ExtendSet<ExtendSet<T>>(set.vs().sort((a, b) => a.vs().length - b.vs().length));
+  }
+
   addMultiple(items: ExtendSet<T>): void;
   addMultiple(items: T[]): void;
   addMultiple(...items: T[]): void;

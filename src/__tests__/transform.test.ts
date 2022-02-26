@@ -2,7 +2,7 @@ import {
   Input, NondeterministicFiniteAutomachine, State,
 } from '@/FiniteStateMachine';
 import {
-  getSubsets, getNextStates, NFA2DFA, findStateSetInSubsets,
+  getNextStates, NFA2DFA, findStateSetInSubsets,
 } from '@/Transform';
 import { ExtendMap, ExtendSet } from '@/utils';
 
@@ -12,13 +12,6 @@ describe('test transform', () => {
   const q3 = new State('q3');
   const a = new Input('a');
   const b = new Input('b');
-
-  test('test getSubset', () => {
-    expect(getSubsets(new ExtendSet<State>()).vs().length).toBe(1);
-    expect(getSubsets(new ExtendSet([q1, q2])).vs().length).toBe(4);
-    expect(getSubsets(new ExtendSet([q1, q2, q3])).vs().length).toBe(2 ** 3);
-    expect(getSubsets(new ExtendSet([q1, q2, q1, q2, q3])).vs().length).toBe(2 ** 3);
-  });
 
   const N = new NondeterministicFiniteAutomachine(
     'N',

@@ -22,6 +22,7 @@ module.exports = {
   rules: {
     'no-console': 'off',
     'no-continue': 'off',
+    'no-plusplus': 'off',
     'max-len': 'off',
     'arrow-body-style': 'off',
     'no-restricted-syntax': 'off',

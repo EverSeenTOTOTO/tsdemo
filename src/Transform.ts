@@ -25,26 +25,8 @@ export const createStateSet = (s: ExtendSet<State>) => new MergedState(
 
 // 求一个集合的全部子集
 export const getSubsets = (stateSet: ExtendSet<State>) => {
-  const states = stateSet.vs();
-  const set = new ExtendSet<ExtendSet<State>>([ExtendSet.None]);
-
-  const helper = (x: number, last: ExtendSet<State>) => {
-    for (let y = x; y < states.length; ++y) {
-      const current = new ExtendSet([...last.vs(), states[y]]);
-
-      set.add(current);
-
-      helper(y + 1, current);
-    }
-  };
-
-  helper(0, new ExtendSet());
-
   return new ExtendSet(
-    set.vs()
-      .sort((a, b) => (a.vs().length < b.vs().length ? -1 : 0))
-      .map(createStateSet)
-      .sort((a, b) => (a.name < b.name ? -1 : 0)),
+    stateSet.subsets().vs().map(createStateSet).sort((a, b) => (a.name < b.name ? -1 : 0)),
   );
 };
 
