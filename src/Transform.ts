@@ -30,19 +30,15 @@ export const getSubsets = (stateSet: ExtendSet<State>) => {
   );
 };
 
-// 给定子集，在全部子集中找到相等的集合，避免new两个相同的集合进行相等比较，由于引用不同返回不等
-export const findStateSetInSubsets = (sets: ExtendSet<MergedState>, states: ExtendSet<State>) => {
+// 给定子集，在全部子集中找到相等的集合，避免new两个相同的集合进行相等比较，由于引用不同返回不相等
+export const findStateInSubstates = (sets: ExtendSet<MergedState>, states: ExtendSet<State>) => {
   for (const set of sets) {
     if (ExtendSet.isSame(set.states, states)) {
       return set;
     }
   }
 
-  if (__DEV__) {
-    console.warn(`Cannot find state set in subsets: ${JSON.stringify(states.vs())}`);
-  }
-
-  return createStateSet(states);
+  throw new Error('Cannot find state set in subsets');
 };
 
 /**
@@ -100,6 +96,19 @@ export function getNextStates(nfa: NondeterministicFiniteAutomachine, input: Inp
   return nextStates;
 }
 
+const computeReachableStates = (nfa: NondeterministicFiniteAutomachine, state: State): ExtendMap<Input, ExtendSet<State>> => {
+  const reachableStates = new ExtendMap<Input, ExtendSet<State>>();
+
+  for (const input of nfa.inputSet) {
+    if (input === Input.EPSILON) {
+      continue;
+    }
+    reachableStates.set(input, getNextStates(nfa, input, state));
+  }
+
+  return reachableStates;
+};
+
 /**
  * 将NFA转换为等价的DFA
  * @param {NondeterministicFiniteAutomachine} nfa - NFA
@@ -107,54 +116,81 @@ export function getNextStates(nfa: NondeterministicFiniteAutomachine, input: Inp
  */
 export const NFA2DFA = (nfa: NondeterministicFiniteAutomachine): DeterministicFinitAutomachine<MergedState> => {
   const subsets = getSubsets(nfa.stateSet);
+  // 存放NFA中每个小状态经过非EPSILON到达的状态集合，这些集合将合并为一个DFA中的大状态
+  const table = new ExtendMap<State, ExtendMap<Input, ExtendSet<State>>>();
+
+  for (const state of nfa.stateSet) {
+    table.set(state, computeReachableStates(nfa, state));
+  }
+
+  // 用于记录每个状态是否已经被访问过
+  const memory = new ExtendSet<MergedState>();
+  // 计算DFA的状态转移函数
+  const map = new ExtendMap<MergedState, ExtendMap<Input, MergedState>>();
+
+  // 每次求出可到达的下一个NFA小状态，合并为DFA的一个状态，直到没有新的DFA状态出现
+  const helper = (current: MergedState) => {
+    if (!memory.has(current)) {
+      memory.add(current);
+
+      const transform = new ExtendMap<Input, MergedState>();
+
+      for (const input of nfa.inputSet) {
+        if (input === Input.EPSILON) {
+          continue;
+        }
+        // NFA的小状态到达的状态合并之后是DFA的某个状态
+        const nextStates = current.states.vs()
+          .map((each) => table.get(each)?.get(input) ?? ExtendSet.None)
+          .reduce((p, c) => { return ExtendSet.union(p, c); });
+
+        if (nextStates.length > 0) {
+          const nextStateSet = findStateInSubstates(subsets, nextStates);
+
+          transform.set(input, nextStateSet);
+          helper(nextStateSet);
+        }
+      }
+
+      map.set(current, transform);
+    }
+  };
+
   // DFA的起始状态为NFA的起始状态加上该状态经过EPSILON到达的状态集合
-  const initialState = findStateSetInSubsets(subsets, getEpsilonNextStates(nfa, nfa.initialState));
-  // DFA的终止状态为subsets中所有包含NFA的至少一个接受状态的状态
-  const finalStates = new ExtendSet(subsets.vs().filter((s) => {
+  const initialState = findStateInSubstates(subsets, getEpsilonNextStates(nfa, nfa.initialState));
+
+  helper(initialState);
+
+  // DFA的终止状态需包含NFA的至少一个接受状态
+  const finalStates = new ExtendSet(memory.vs().filter((state) => {
     for (const finalState of nfa.finalStates) {
-      if (s.states.has(finalState)) {
+      if (state.states.has(finalState)) {
         return true;
       }
     }
     return false;
   }));
 
-  // 计算DFA的状态转移函数
-  const map = new ExtendMap<MergedState, ExtendMap<Input, MergedState>>();
+  return new DeterministicFinitAutomachine(nfa.name, map, initialState, finalStates);
+};
 
-  // 对于DFA中的每个状态subState，其集合中每个state经过input所能到达的state集合构成新的subState，也就是下一个状态
-  for (const subState of subsets) {
-    const transform = new ExtendMap<Input, MergedState>();
+// 给定一个输入串，返回是否可以达到接受状态
+export const accept = (machine: DeterministicFinitAutomachine|NondeterministicFiniteAutomachine, inputs: Input[]): boolean => {
+  if (machine instanceof DeterministicFinitAutomachine) {
+    let currentState: State|undefined = machine.initialState;
 
-    for (const input of nfa.inputSet) {
-      if (input === Input.EPSILON) continue;
+    for (const input of inputs) {
+      currentState = machine.next(input, currentState);
 
-      const nextStates = getNextStates(nfa, input, subState.states);
-      const nextState = findStateSetInSubsets(subsets, nextStates);
-
-      transform.set(input, nextState);
-    }
-
-    map.set(subState, transform);
-  }
-
-  const dfa = new DeterministicFinitAutomachine(
-    nfa.name,
-    map,
-    initialState,
-    finalStates,
-  );
-
-  // 移除无法到达的状态
-  for (const [state, transform] of dfa.reverseTransform) {
-    if (transform.length === 0 && dfa.initialState !== state) {
-      dfa.transforms.delete(state);
-
-      if (__DEV__) {
-        console.info(`Removed unreachable state ${state.name}`);
+      if (!currentState) {
+        return false;
       }
     }
+
+    return machine.isFinal(currentState);
   }
 
-  return dfa;
+  const dfa = NFA2DFA(machine);
+
+  return accept(dfa, inputs);
 };

@@ -1,6 +1,7 @@
 import {
   DeterministicFinitAutomachine, Input, NondeterministicFiniteAutomachine, State,
 } from '@/FiniteStateMachine';
+import { accept } from '@/Transform';
 import { ExtendMap, ExtendSet } from '@/utils';
 
 describe('FiniteStateMachine', () => {
@@ -85,6 +86,21 @@ describe('FiniteStateMachine', () => {
       q2,
       q3,
     ]);
+
+    expect(accept(M, [
+      Input.RESET,
+      i1,
+      i0,
+      i0,
+      i0,
+    ])).toBe(false);
+    expect(accept(M, [
+      Input.RESET,
+      i1,
+      i0,
+      i0,
+      i1,
+    ])).toBe(true);
   });
 
   test('test NFA', () => {
@@ -96,31 +112,30 @@ describe('FiniteStateMachine', () => {
           new ExtendMap<Input, ExtendSet<State>>([
             [i0, new ExtendSet([q1])],
             [i1, new ExtendSet([q1, q2])],
-            [Input.EPSILON, new ExtendSet()],
+            [Input.EPSILON, ExtendSet.None],
           ]),
         ],
         [
           q2,
           new ExtendMap<Input, ExtendSet<State>>([
             [i0, new ExtendSet([q2])],
-            [i1, new ExtendSet()],
+            [i1, new ExtendSet([q4])],
             [Input.EPSILON, new ExtendSet([q3])],
           ]),
         ],
         [
           q3,
           new ExtendMap<Input, ExtendSet<State>>([
-            [i0, new ExtendSet()],
+            [i0, ExtendSet.None],
             [i1, new ExtendSet([q1])],
-            [Input.EPSILON, new ExtendSet()],
+            [Input.EPSILON, ExtendSet.None],
           ]),
         ],
         [
           q4,
           new ExtendMap<Input, ExtendSet<State>>([
-            [i0, new ExtendSet([q4])],
-            [i1, new ExtendSet([q4])],
-            [Input.EPSILON, new ExtendSet()],
+            [i1, new ExtendSet([q2])],
+            [Input.EPSILON, ExtendSet.None],
           ]),
         ],
       ]),
@@ -129,11 +144,27 @@ describe('FiniteStateMachine', () => {
     );
 
     expect(M.stateSet.vs()).toEqual([q1, q2, q3, q4]);
-    expect(M.inputSet.vs()).toEqual([i0, i1, Input.EPSILON]);
 
     expect(M.next(Input.RESET).vs()).toEqual([]);
     expect(M.next(i1, q1).vs()).toEqual([q1, q2]);
+    expect(M.next(Input.EPSILON, q2).vs()).toEqual([q3]);
 
     expect(M.isFinal(q2)).toBe(false);
+
+    const inputs = [
+      Input.RESET,
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      // eslint-disable-next-line prefer-spread
+      ...Array.apply(null, { length: 1000 }).map(() => i1),
+      i0,
+      i1,
+      i0,
+    ];
+
+    // 不会接受以0结束的串
+    expect(accept(M, inputs)).toBe(false);
+    expect(accept(M, inputs.slice(0, inputs.length - 1))).toBe(true);
+    expect(accept(M, inputs.slice(0, inputs.length - 2))).toBe(false);
   });
 });

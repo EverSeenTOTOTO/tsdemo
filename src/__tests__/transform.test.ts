@@ -2,7 +2,7 @@ import {
   Input, NondeterministicFiniteAutomachine, State,
 } from '@/FiniteStateMachine';
 import {
-  getNextStates, NFA2DFA, findStateSetInSubsets,
+  getNextStates, NFA2DFA, findStateInSubstates,
 } from '@/Transform';
 import { ExtendMap, ExtendSet } from '@/utils';
 
@@ -58,26 +58,12 @@ describe('test transform', () => {
   test('test NFA2DFA', () => {
     const M = NFA2DFA(N);
 
-    const sempty = findStateSetInSubsets(M.stateSet, new ExtendSet());
-    const sq2 = findStateSetInSubsets(M.stateSet, new ExtendSet([q2]));
-    const sq3 = findStateSetInSubsets(M.stateSet, new ExtendSet([q3]));
-    const sq2q3 = findStateSetInSubsets(M.stateSet, new ExtendSet([q2, q3]));
-    const sq1q3 = findStateSetInSubsets(M.stateSet, new ExtendSet([q1, q3]));
-    const sq1q2q3 = findStateSetInSubsets(M.stateSet, new ExtendSet([q1, q2, q3]));
+    const sq2q3 = findStateInSubstates(M.stateSet, new ExtendSet([q2, q3]));
+    const sq1q2q3 = findStateInSubstates(M.stateSet, new ExtendSet([q1, q2, q3]));
 
-    expect(N.inputSet.vs()).toEqual([
-      Input.EPSILON,
-      ...M.inputSet.vs(),
-    ]);
-    expect(M.next(a, sempty)).toBe(sempty);
-    expect(M.next(b, sempty)).toBe(sempty);
-    expect(M.next(a, sq2)).toBe(sq2q3);
-    expect(M.next(b, sq2)).toBe(sq2q3);
     expect(M.next(a, sq2q3)).toBe(sq1q2q3);
     expect(M.next(b, sq2q3)).toBe(sq2q3);
     expect(M.next(a, sq1q2q3)).toBe(sq1q2q3);
     expect(M.next(b, sq1q2q3)).toBe(sq2q3);
-    expect(M.next(a, sq3)).toBeUndefined();
-    expect(M.next(b, sq1q3)).toBeUndefined();
   });
 });

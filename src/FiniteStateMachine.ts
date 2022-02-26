@@ -44,12 +44,12 @@ export class DeterministicFinitAutomachine<S extends State = State, I extends In
   }
 
   get stateSet() {
-    return new ExtendSet(this.transforms.keys());
+    return new ExtendSet([...this.transforms.keys()].sort((a, b) => (a.name < b.name ? -1 : 0)));
   }
 
   get inputSet() {
     return new ExtendSet(this.transforms.vs()
-      .map((transform) => [...transform.keys()])
+      .map((transform) => [...transform.keys()].sort((a, b) => (a.name < b.name ? -1 : 0)))
       .reduce((prev, curr) => [...curr, ...prev], []));
   }
 
@@ -133,12 +133,12 @@ export class NondeterministicFiniteAutomachine<S extends State = State, I extend
   }
 
   get stateSet() {
-    return new ExtendSet(this.transforms.keys());
+    return new ExtendSet([...this.transforms.keys()].sort((a, b) => (a.name < b.name ? -1 : 0)));
   }
 
   get inputSet() {
     return new ExtendSet(this.transforms.vs()
-      .map((transform) => [...transform.keys()])
+      .map((transform) => [...transform.keys()].sort((a, b) => (a.name < b.name ? -1 : 0)))
       .reduce((prev, curr) => [...curr, ...prev], []));
   }
 
@@ -151,6 +151,6 @@ export class NondeterministicFiniteAutomachine<S extends State = State, I extend
     const currentState = current ?? this.initialState;
     const nextState = this.transforms.get(currentState)?.get(input);
 
-    return nextState ?? new ExtendSet<S>();
+    return nextState ?? ExtendSet.None as ExtendSet<S>;
   }
 }
