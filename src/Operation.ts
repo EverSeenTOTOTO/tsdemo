@@ -1,9 +1,12 @@
 import {
-  EPSILON,
   Input,
-  NondeterministicFiniteAutomachine, State,
+  State,
+  StateSet,
+  NFATransform,
+  NondeterministicFiniteAutomachine,
+  NFATransformTable,
 } from '@/FiniteStateMachine';
-import { ExtendMap, ExtendSet } from '@/utils';
+import { ExtendSet } from '@/utils';
 
 // 并运算
 export const union = (a: NondeterministicFiniteAutomachine, b: NondeterministicFiniteAutomachine) => {
@@ -15,21 +18,21 @@ export const union = (a: NondeterministicFiniteAutomachine, b: NondeterministicF
   const inputSet = ExtendSet.union(a.inputSet, b.inputSet);
 
   // 新的起始状态经过EPSILON到达a和b
-  inputSet.add(EPSILON);
+  inputSet.add(Input.EPSILON);
 
   const stateSet = ExtendSet.union(a.stateSet, b.stateSet);
 
   stateSet.add(initialState);
 
   // 计算新的转换函数
-  const map = new ExtendMap<State, ExtendMap<Input, ExtendSet<State>>>();
+  const map = new NFATransformTable();
   for (const state of stateSet) {
-    const transform = new ExtendMap<Input, ExtendSet<State>>();
+    const transform = new NFATransform();
 
     for (const input of inputSet) {
       if (state === initialState) { // 如果是新的起始状态，经过EPSILON到达a和b的起始状态
-        if (input === EPSILON) {
-          transform.set(input, new ExtendSet([a.initialState, b.initialState]));
+        if (input === Input.EPSILON) {
+          transform.set(input, new StateSet([a.initialState, b.initialState]));
         } else {
           transform.set(input, ExtendSet.None);
         }
@@ -56,20 +59,20 @@ export const union = (a: NondeterministicFiniteAutomachine, b: NondeterministicF
 export const concat = (a: NondeterministicFiniteAutomachine, b: NondeterministicFiniteAutomachine) => {
   const inputSet = ExtendSet.union(a.inputSet, b.inputSet);
 
-  inputSet.add(EPSILON);
+  inputSet.add(Input.EPSILON);
 
   const stateSet = ExtendSet.union(a.stateSet, b.stateSet);
 
   // 计算新的转换函数
-  const map = new ExtendMap<State, ExtendMap<Input, ExtendSet<State>>>();
+  const map = new NFATransformTable();
 
   for (const state of stateSet) {
-    const transform = new ExtendMap<Input, ExtendSet<State>>();
+    const transform = new NFATransform();
 
     for (const input of inputSet) {
       const nextStates = ExtendSet.union(a.next(input, state), b.next(input, state));
 
-      if (a.finalStates.has(state) && input === EPSILON) {
+      if (a.finalStates.has(state) && input === Input.EPSILON) {
         // 针对a的每一个接受状态，增加一个EPSILON到q2的起始状态
         nextStates.add(b.initialState);
       }
@@ -94,33 +97,33 @@ export const star = (nfa: NondeterministicFiniteAutomachine) => {
   const initialState = new State(`${nfa.initialState.name}*`);
 
   // 新的起始状态也是接受状态
-  const finalStates = new ExtendSet(nfa.finalStates);
+  const finalStates = new StateSet(nfa.finalStates);
 
   finalStates.add(initialState);
 
-  const inputSet = new ExtendSet(nfa.inputSet);
+  const inputSet = new StateSet(nfa.inputSet);
 
   // 新的起始状态经过EPSILON到达原有的起始状态
-  inputSet.add(EPSILON);
+  inputSet.add(Input.EPSILON);
 
-  const stateSet = new ExtendSet(nfa.stateSet);
+  const stateSet = new StateSet(nfa.stateSet);
 
   stateSet.add(initialState);
 
   // 计算新的转换函数
-  const map = new ExtendMap<State, ExtendMap<Input, ExtendSet<State>>>();
+  const map = new NFATransformTable();
 
   for (const state of stateSet) {
-    const transform = new ExtendMap<Input, ExtendSet<State>>();
+    const transform = new NFATransform();
 
     for (const input of inputSet) {
       if (state === initialState) {
-        if (input === EPSILON) { // 新的起始状态经过EPSILON到达旧的起始状态
-          transform.set(input, new ExtendSet([nfa.initialState]));
+        if (input === Input.EPSILON) { // 新的起始状态经过EPSILON到达旧的起始状态
+          transform.set(input, new StateSet([nfa.initialState]));
         } else {
           transform.set(input, ExtendSet.None);
         }
-      } else if (nfa.finalStates.has(state) && input === EPSILON) { // 给旧的接受状态增加经过EPSILON到达旧的起始状态的转换
+      } else if (nfa.finalStates.has(state) && input === Input.EPSILON) { // 给旧的接受状态增加经过EPSILON到达旧的起始状态的转换
         const nextStates = nfa.next(input, state);
 
         nextStates.add(nfa.initialState);

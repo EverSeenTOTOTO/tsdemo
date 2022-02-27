@@ -1,10 +1,12 @@
 import {
-  EPSILON,
   Input,
-  NondeterministicFiniteAutomachine, State,
+  State,
+  NondeterministicFiniteAutomachine,
+  NFATransformTable,
+  NFATransform,
+  StateSet,
 } from '@/FiniteStateMachine';
 import { concat, star, union } from '@/Operation';
-import { ExtendMap, ExtendSet } from '@/utils';
 
 describe('test Operation', () => {
   const q1 = new State('q1');
@@ -17,44 +19,44 @@ describe('test Operation', () => {
   test('test union', () => {
     const N1 = new NondeterministicFiniteAutomachine(
       'N1',
-      new ExtendMap([
+      new NFATransformTable([
         [
           q1,
-          new ExtendMap([
+          new NFATransform([
             [
               a,
-              new ExtendSet([q2]),
+              new StateSet([q2]),
             ],
           ]),
         ],
       ]),
       q1,
-      new ExtendSet([q2]),
+      new StateSet([q2]),
     );
     const N2 = new NondeterministicFiniteAutomachine(
       'N2',
-      new ExtendMap([
+      new NFATransformTable([
         [
           q1,
-          new ExtendMap([
+          new NFATransform([
             [
               a,
-              new ExtendSet([q3]),
+              new StateSet([q3]),
             ],
           ]),
         ],
         [
           q2,
-          new ExtendMap([
+          new NFATransform([
             [
               b,
-              new ExtendSet([q3]),
+              new StateSet([q3]),
             ],
           ]),
         ],
       ]),
       q2,
-      new ExtendSet([q3]),
+      new StateSet([q3]),
     );
 
     const U = union(N1, N2);
@@ -65,7 +67,7 @@ describe('test Operation', () => {
       ...N2.finalStates.vs(),
     ]);
     expect(U.next(q3, U.initialState).length).toBe(0);
-    expect(U.next(EPSILON, U.initialState).vs()).toEqual([
+    expect(U.next(Input.EPSILON, U.initialState).vs()).toEqual([
       N1.initialState,
       N2.initialState,
     ]);
@@ -80,53 +82,53 @@ describe('test Operation', () => {
   test('test concat', () => {
     const N1 = new NondeterministicFiniteAutomachine(
       'N1',
-      new ExtendMap([
+      new NFATransformTable([
         [
           q1,
-          new ExtendMap([
+          new NFATransform([
             [
               a,
-              new ExtendSet([q2]),
+              new StateSet([q2]),
             ],
           ]),
         ],
         [
           q2,
-          new ExtendMap([
+          new NFATransform([
             [
               b,
-              new ExtendSet([q3]),
+              new StateSet([q3]),
             ],
           ]),
         ],
       ]),
       q1,
-      new ExtendSet([q2, q3]),
+      new StateSet([q2, q3]),
     );
     const N2 = new NondeterministicFiniteAutomachine(
       'N2',
-      new ExtendMap([
+      new NFATransformTable([
         [
           q3,
-          new ExtendMap([
+          new NFATransform([
             [
               a,
-              new ExtendSet([q1, q4]),
+              new StateSet([q1, q4]),
             ],
           ]),
         ],
         [
           q2,
-          new ExtendMap([
+          new NFATransform([
             [
               b,
-              new ExtendSet([q4]),
+              new StateSet([q4]),
             ],
           ]),
         ],
       ]),
       q3,
-      new ExtendSet([q4]),
+      new StateSet([q4]),
     );
 
     const C = concat(N1, N2);
@@ -139,7 +141,7 @@ describe('test Operation', () => {
     expect(C.next(b, q2).vs()).toEqual([
       q3, q4,
     ]);
-    expect(C.next(EPSILON, q3).vs()).toEqual([
+    expect(C.next(Input.EPSILON, q3).vs()).toEqual([
       q3,
     ]);
   });
@@ -147,28 +149,28 @@ describe('test Operation', () => {
   test('test star', () => {
     const N = new NondeterministicFiniteAutomachine(
       'N',
-      new ExtendMap([
+      new NFATransformTable([
         [
           q1,
-          new ExtendMap([
+          new NFATransform([
             [
               a,
-              new ExtendSet([q2]),
+              new StateSet([q2]),
             ],
           ]),
         ],
         [
           q2,
-          new ExtendMap([
+          new NFATransform([
             [
-              EPSILON,
-              new ExtendSet([q2]),
+              Input.EPSILON,
+              new StateSet([q2]),
             ],
           ]),
         ],
       ]),
       q1,
-      new ExtendSet([q2]),
+      new StateSet([q2]),
     );
 
     const S = star(N);
@@ -178,10 +180,10 @@ describe('test Operation', () => {
       ...N.finalStates.vs(),
       S.initialState,
     ]);
-    expect(S.next(EPSILON, S.initialState).vs()).toEqual([
+    expect(S.next(Input.EPSILON, S.initialState).vs()).toEqual([
       q1,
     ]);
-    expect(S.next(EPSILON, q2).vs()).toEqual([
+    expect(S.next(Input.EPSILON, q2).vs()).toEqual([
       q2, q1,
     ]);
   });
@@ -189,35 +191,35 @@ describe('test Operation', () => {
   test('test combine operations', () => {
     const N1 = new NondeterministicFiniteAutomachine(
       'N1',
-      new ExtendMap([
+      new NFATransformTable([
         [
           q1,
-          new ExtendMap([
+          new NFATransform([
             [
               a,
-              new ExtendSet([q2]),
+              new StateSet([q2]),
             ],
           ]),
         ],
       ]),
       q1,
-      new ExtendSet([q2]),
+      new StateSet([q2]),
     );
     const N2 = new NondeterministicFiniteAutomachine(
       'N2',
-      new ExtendMap([
+      new NFATransformTable([
         [
           q2,
-          new ExtendMap([
+          new NFATransform([
             [
               b,
-              new ExtendSet([q3]),
+              new StateSet([q3]),
             ],
           ]),
         ],
       ]),
       q2,
-      new ExtendSet([q3]),
+      new StateSet([q3]),
     );
 
     const next = (nfa: NondeterministicFiniteAutomachine, input: Input, state?: State) => nfa.next(input, state).vs()[0];
@@ -233,7 +235,7 @@ describe('test Operation', () => {
       let i = 0;
       let state = S.initialState;
       while (i < time) {
-        state = next(S, EPSILON, next(S, b, next(S, a)));
+        state = next(S, Input.EPSILON, next(S, b, next(S, a)));
         i += 1;
       }
 

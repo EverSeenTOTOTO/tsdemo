@@ -32,7 +32,7 @@ export class ExtendSet<T> extends Set<T> {
   }
 
   // get all subsets
-  subsets() {
+  subsets(): ExtendSet<ExtendSet<T>> {
     const values = this.vs();
     const set = new ExtendSet([ExtendSet.None]);
 

@@ -1,8 +1,16 @@
 import {
-  DeterministicFinitAutomachine, Input, NondeterministicFiniteAutomachine, State,
+  Input,
+  State,
+  StateSet,
+  DFATransform,
+  NFATransform,
+  DeterministicFinitAutomachine,
+  NondeterministicFiniteAutomachine,
+  DFATransformTable,
+  NFATransformTable,
 } from '@/FiniteStateMachine';
 import { accept } from '@/Transform';
-import { ExtendMap, ExtendSet } from '@/utils';
+import { ExtendSet } from '@/utils';
 
 describe('FiniteStateMachine', () => {
   const q1 = new State('q1');
@@ -15,31 +23,31 @@ describe('FiniteStateMachine', () => {
   test('test DFA', () => {
     const M = new DeterministicFinitAutomachine(
       'M',
-      new ExtendMap<State, ExtendMap<Input, State>>([
+      new DFATransformTable([
         [
           q1,
-          new ExtendMap<Input, State>([
+          new DFATransform([
             [i0, q1],
             [i1, q2],
           ]),
         ],
         [
           q2,
-          new ExtendMap<Input, State>([
+          new DFATransform([
             [i0, q3],
             [i1, q2],
           ]),
         ],
         [
           q3,
-          new ExtendMap<Input, State>([
+          new DFATransform([
             [i0, q2],
             [i1, q2],
           ]),
         ],
       ]),
       q1,
-      new ExtendSet([q2]),
+      new StateSet([q2]),
     );
 
     expect(M.stateSet.vs()).toEqual([q1, q2, q3]);
@@ -90,15 +98,19 @@ describe('FiniteStateMachine', () => {
     expect(accept(M, [
       Input.RESET,
       i1,
-      i0,
-      i0,
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      // eslint-disable-next-line prefer-spread
+      ...Array.apply(null, { length: 1000 }).map(() => i0),
       i0,
     ])).toBe(false);
     expect(accept(M, [
       Input.RESET,
       i1,
-      i0,
-      i0,
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      // eslint-disable-next-line prefer-spread
+      ...Array.apply(null, { length: 1000 }).map(() => i0),
       i1,
     ])).toBe(true);
   });
@@ -106,41 +118,41 @@ describe('FiniteStateMachine', () => {
   test('test NFA', () => {
     const M = new NondeterministicFiniteAutomachine(
       'M',
-      new ExtendMap<State, ExtendMap<Input, ExtendSet<State>>>([
+      new NFATransformTable([
         [
           q1,
-          new ExtendMap<Input, ExtendSet<State>>([
-            [i0, new ExtendSet([q1])],
-            [i1, new ExtendSet([q1, q2])],
+          new NFATransform([
+            [i0, new StateSet([q1])],
+            [i1, new StateSet([q1, q2])],
             [Input.EPSILON, ExtendSet.None],
           ]),
         ],
         [
           q2,
-          new ExtendMap<Input, ExtendSet<State>>([
-            [i0, new ExtendSet([q2])],
-            [i1, new ExtendSet([q4])],
-            [Input.EPSILON, new ExtendSet([q3])],
+          new NFATransform([
+            [i0, new StateSet([q2])],
+            [i1, new StateSet([q4])],
+            [Input.EPSILON, new StateSet([q3])],
           ]),
         ],
         [
           q3,
-          new ExtendMap<Input, ExtendSet<State>>([
+          new NFATransform([
             [i0, ExtendSet.None],
-            [i1, new ExtendSet([q1])],
+            [i1, new StateSet([q1])],
             [Input.EPSILON, ExtendSet.None],
           ]),
         ],
         [
           q4,
-          new ExtendMap<Input, ExtendSet<State>>([
-            [i1, new ExtendSet([q2])],
+          new NFATransform([
+            [i1, new StateSet([q2])],
             [Input.EPSILON, ExtendSet.None],
           ]),
         ],
       ]),
       q1,
-      new ExtendSet([q4]),
+      new StateSet([q4]),
     );
 
     expect(M.stateSet.vs()).toEqual([q1, q2, q3, q4]);

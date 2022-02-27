@@ -1,37 +1,42 @@
 /* eslint-disable no-plusplus */
 import {
   State,
-  NondeterministicFiniteAutomachine,
   Input,
+  StateSet,
+  DFATransform,
+  NFATransform,
+  NFATransformTable,
   DeterministicFinitAutomachine,
+  NondeterministicFiniteAutomachine,
+  DFATransformTable,
 } from '@/FiniteStateMachine';
 import { ExtendMap, ExtendSet } from '@/utils';
 
 // NFA转DFA时，会将若干个状态合并为一个新的状态
 export class MergedState extends State {
-  states: ExtendSet<State>;
+  states: StateSet;
 
-  constructor(name: string, states: ExtendSet<State>) {
+  constructor(name: string, states: StateSet) {
     super(name);
 
     this.states = states;
   }
 }
 
-export const createStateSet = (s: ExtendSet<State>) => new MergedState(
+export const createStateSet = (s: StateSet) => new MergedState(
   s.vs().map((state) => state.name).join(' '),
   s,
 );
 
 // 求一个集合的全部子集
-export const getSubsets = (stateSet: ExtendSet<State>) => {
-  return new ExtendSet(
+export const getSubsets = (stateSet: StateSet) => {
+  return new StateSet(
     stateSet.subsets().vs().map(createStateSet).sort((a, b) => (a.name < b.name ? -1 : 0)),
   );
 };
 
 // 给定子集，在全部子集中找到相等的集合，避免new两个相同的集合进行相等比较，由于引用不同返回不相等
-export const findStateInSubstates = (sets: ExtendSet<MergedState>, states: ExtendSet<State>) => {
+export const findStateInSubstates = (sets: StateSet<MergedState>, states: StateSet) => {
   for (const set of sets) {
     if (ExtendSet.isSame(set.states, states)) {
       return set;
@@ -43,15 +48,15 @@ export const findStateInSubstates = (sets: ExtendSet<MergedState>, states: Exten
 
 /**
  * @param {NondeterministicFiniteAutomachine} nfa - NFA
- * @param {ExtendSet<State>} current - 当前状态
- * @returns {ExtendSet<State>} 经过EPSILON可到达的下一个状态集
+ * @param {StateSet} current - 当前状态
+ * @returns {StateSet} 经过EPSILON可到达的下一个状态集
  */
-export function getEpsilonNextStates(nfa: NondeterministicFiniteAutomachine, current: ExtendSet<State>): ExtendSet<State>;
-export function getEpsilonNextStates(nfa: NondeterministicFiniteAutomachine, current: State): ExtendSet<State>;
-export function getEpsilonNextStates(nfa: NondeterministicFiniteAutomachine, current: State|ExtendSet<State>) {
-  const nextStates = new ExtendSet<State>();
+export function getEpsilonNextStates(nfa: NondeterministicFiniteAutomachine, current: StateSet): StateSet;
+export function getEpsilonNextStates(nfa: NondeterministicFiniteAutomachine, current: State): StateSet;
+export function getEpsilonNextStates(nfa: NondeterministicFiniteAutomachine, current: State|StateSet) {
+  const nextStates = new StateSet();
 
-  const helper = (states: ExtendSet<State>) => {
+  const helper = (states: StateSet) => {
     for (const state of states) {
       if (!nextStates.has(state)) {
         nextStates.add(state);
@@ -64,7 +69,7 @@ export function getEpsilonNextStates(nfa: NondeterministicFiniteAutomachine, cur
   if (current instanceof ExtendSet) {
     helper(current);
   } else {
-    helper(new ExtendSet([current]));
+    helper(new StateSet([current]));
   }
 
   return nextStates;
@@ -74,12 +79,12 @@ export function getEpsilonNextStates(nfa: NondeterministicFiniteAutomachine, cur
  * @param {NondeterministicFiniteAutomachine} nfa - NFA
  * @param {Input} input - 输入
  * @param {State} state - 当前状态
- * @returns {ExtendSet<State>} 下一个状态集合
+ * @returns {StateSet} 下一个状态集合
  */
-export function getNextStates(nfa: NondeterministicFiniteAutomachine, input: Input, current: State): ExtendSet<State>;
-export function getNextStates(nfa: NondeterministicFiniteAutomachine, input: Input, current: ExtendSet<State>): ExtendSet<State>;
-export function getNextStates(nfa: NondeterministicFiniteAutomachine, input: Input, current: State|ExtendSet<State>) {
-  const nextStates = new ExtendSet<State>();
+export function getNextStates(nfa: NondeterministicFiniteAutomachine, input: Input, current: State): StateSet;
+export function getNextStates(nfa: NondeterministicFiniteAutomachine, input: Input, current: StateSet): StateSet;
+export function getNextStates(nfa: NondeterministicFiniteAutomachine, input: Input, current: State|StateSet) {
+  const nextStates = new StateSet();
 
   if (current instanceof ExtendSet) {
     for (const state of current) {
@@ -96,8 +101,8 @@ export function getNextStates(nfa: NondeterministicFiniteAutomachine, input: Inp
   return nextStates;
 }
 
-const computeReachableStates = (nfa: NondeterministicFiniteAutomachine, state: State): ExtendMap<Input, ExtendSet<State>> => {
-  const reachableStates = new ExtendMap<Input, ExtendSet<State>>();
+const computeReachableStates = (nfa: NondeterministicFiniteAutomachine, state: State): ExtendMap<Input, StateSet> => {
+  const reachableStates = new NFATransform();
 
   for (const input of nfa.inputSet) {
     if (input === Input.EPSILON) {
@@ -117,23 +122,23 @@ const computeReachableStates = (nfa: NondeterministicFiniteAutomachine, state: S
 export const NFA2DFA = (nfa: NondeterministicFiniteAutomachine): DeterministicFinitAutomachine<MergedState> => {
   const subsets = getSubsets(nfa.stateSet);
   // 存放NFA中每个小状态经过非EPSILON到达的状态集合，这些集合将合并为一个DFA中的大状态
-  const table = new ExtendMap<State, ExtendMap<Input, ExtendSet<State>>>();
+  const table = new NFATransformTable();
 
   for (const state of nfa.stateSet) {
     table.set(state, computeReachableStates(nfa, state));
   }
 
   // 用于记录每个状态是否已经被访问过
-  const memory = new ExtendSet<MergedState>();
+  const memory = new StateSet<MergedState>();
   // 计算DFA的状态转移函数
-  const map = new ExtendMap<MergedState, ExtendMap<Input, MergedState>>();
+  const map = new DFATransformTable<MergedState>();
 
-  // 每次求出可到达的下一个NFA小状态，合并为DFA的一个状态，直到没有新的DFA状态出现
+  // 针对MergedState中的每个小状态，求出可到达的下一个NFA小状态，合并为DFA的一个状态，直到没有新的DFA状态出现
   const helper = (current: MergedState) => {
     if (!memory.has(current)) {
       memory.add(current);
 
-      const transform = new ExtendMap<Input, MergedState>();
+      const transform = new DFATransform<MergedState>();
 
       for (const input of nfa.inputSet) {
         if (input === Input.EPSILON) {
@@ -162,7 +167,7 @@ export const NFA2DFA = (nfa: NondeterministicFiniteAutomachine): DeterministicFi
   helper(initialState);
 
   // DFA的终止状态需包含NFA的至少一个接受状态
-  const finalStates = new ExtendSet(memory.vs().filter((state) => {
+  const finalStates = new StateSet(memory.vs().filter((state) => {
     for (const finalState of nfa.finalStates) {
       if (state.states.has(finalState)) {
         return true;
