@@ -10,7 +10,6 @@ import {
   NondeterministicFiniteAutomachine,
   DFATransformTable,
 } from '@/FiniteStateMachine';
-import { ExtendMap, ExtendSet } from '@/utils';
 
 // NFA转DFA时，会将若干个状态合并为一个新的状态
 export class MergedState extends State {
@@ -38,10 +37,12 @@ export const getSubsets = (stateSet: StateSet) => {
 // 给定子集，在全部子集中找到相等的集合，避免new两个相同的集合进行相等比较，由于引用不同返回不相等
 export const findStateInSubstates = (sets: StateSet<MergedState>, states: StateSet) => {
   for (const set of sets) {
-    if (ExtendSet.isSame(set.states, states)) {
+    if (StateSet.isSame(set.states, states)) {
       return set;
     }
   }
+
+  console.log(sets, states);
 
   throw new Error('Cannot find state set in subsets');
 };
@@ -66,7 +67,7 @@ export function getEpsilonNextStates(nfa: NondeterministicFiniteAutomachine, cur
     }
   };
 
-  if (current instanceof ExtendSet) {
+  if (current instanceof StateSet) {
     helper(current);
   } else {
     helper(new StateSet([current]));
@@ -86,7 +87,7 @@ export function getNextStates(nfa: NondeterministicFiniteAutomachine, input: Inp
 export function getNextStates(nfa: NondeterministicFiniteAutomachine, input: Input, current: State|StateSet) {
   const nextStates = new StateSet();
 
-  if (current instanceof ExtendSet) {
+  if (current instanceof StateSet) {
     for (const state of current) {
       nextStates.addMultiple(nfa.next(input, state));
     }
@@ -101,7 +102,7 @@ export function getNextStates(nfa: NondeterministicFiniteAutomachine, input: Inp
   return nextStates;
 }
 
-const computeReachableStates = (nfa: NondeterministicFiniteAutomachine, state: State): ExtendMap<Input, StateSet> => {
+const computeReachableStates = (nfa: NondeterministicFiniteAutomachine, state: State): NFATransform => {
   const reachableStates = new NFATransform();
 
   for (const input of nfa.inputSet) {
@@ -146,8 +147,8 @@ export const NFA2DFA = (nfa: NondeterministicFiniteAutomachine): DeterministicFi
         }
         // NFA的小状态到达的状态合并之后是DFA的某个状态
         const nextStates = current.states.vs()
-          .map((each) => table.get(each)?.get(input) ?? ExtendSet.None)
-          .reduce((p, c) => { return ExtendSet.union(p, c); });
+          .map((each) => table.get(each)?.get(input) ?? new StateSet())
+          .reduce((p, c) => { return StateSet.union(p, c); });
 
         if (nextStates.length > 0) {
           const nextStateSet = findStateInSubstates(subsets, nextStates);

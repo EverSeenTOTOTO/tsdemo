@@ -10,7 +10,6 @@ import {
   NFATransformTable,
 } from '@/FiniteStateMachine';
 import { accept } from '@/Transform';
-import { ExtendSet } from '@/utils';
 
 describe('FiniteStateMachine', () => {
   const q1 = new State('q1');
@@ -54,6 +53,8 @@ describe('FiniteStateMachine', () => {
     expect(M.inputSet.vs()).toEqual([i0, i1]);
     expect(M.next(i0)).toBe(q1);
     expect(M.run([])).toEqual([q1]);
+
+    expect(M.reverseTransforms.get(q2)?.get(i0)).toBe(q3);
 
     let currentState = M.initialState;
     const next = (input: Input) => {
@@ -124,7 +125,7 @@ describe('FiniteStateMachine', () => {
           new NFATransform([
             [i0, new StateSet([q1])],
             [i1, new StateSet([q1, q2])],
-            [Input.EPSILON, ExtendSet.None],
+            [Input.EPSILON, StateSet.None],
           ]),
         ],
         [
@@ -138,16 +139,16 @@ describe('FiniteStateMachine', () => {
         [
           q3,
           new NFATransform([
-            [i0, ExtendSet.None],
+            [i0, StateSet.None],
             [i1, new StateSet([q1])],
-            [Input.EPSILON, ExtendSet.None],
+            [Input.EPSILON, StateSet.None],
           ]),
         ],
         [
           q4,
           new NFATransform([
             [i1, new StateSet([q2])],
-            [Input.EPSILON, ExtendSet.None],
+            [Input.EPSILON, StateSet.None],
           ]),
         ],
       ]),

@@ -1,5 +1,8 @@
 /* eslint-disable max-classes-per-file */
 /* eslint-disable no-extend-native */
+import { v4 as uuidv4 } from 'uuid';
+
+export const uuid = () => uuidv4().replace(/-/g, '').slice(0, 4);
 
 export class ExtendMap<K, V> extends Map<K, V> {
   get length() {

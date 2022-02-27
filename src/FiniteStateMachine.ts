@@ -20,7 +20,7 @@ export class Input {
 
   static RESET = new Input('<reset>');
 
-  static EPSILON = new Input('<epsilon>');
+  static EPSILON = new Input('ε');
 }
 
 export class DFATransform<S extends State = State, I extends Input = Input> extends ExtendMap<I, S> {}
@@ -49,7 +49,11 @@ export class DeterministicFinitAutomachine<S extends State = State, I extends In
   }
 
   get stateSet(): StateSet<S> {
-    return new StateSet<S>([...this.transforms.keys()].sort((a, b) => (a.name < b.name ? -1 : 0)));
+    return new StateSet<S>([
+      this.initialState,
+      ...this.transforms.keys(),
+      ...this.finalStates.vs(),
+    ].sort((a, b) => (a.name < b.name ? -1 : 0)));
   }
 
   get inputSet(): InputSet<I> {
@@ -141,7 +145,11 @@ export class NondeterministicFiniteAutomachine<S extends State = State, I extend
   }
 
   get stateSet(): StateSet<S> {
-    return new StateSet<S>([...this.transforms.keys()].sort((a, b) => (a.name < b.name ? -1 : 0)));
+    return new StateSet<S>([
+      this.initialState,
+      ...this.transforms.keys(),
+      ...this.finalStates.vs(),
+    ].sort((a, b) => (a.name < b.name ? -1 : 0)));
   }
 
   get inputSet(): InputSet<I> {
@@ -159,6 +167,6 @@ export class NondeterministicFiniteAutomachine<S extends State = State, I extend
     const currentState = current ?? this.initialState;
     const nextState = this.transforms.get(currentState)?.get(input);
 
-    return nextState ?? ExtendSet.None as StateSet<S>;
+    return nextState ?? new StateSet<S>();
   }
 }
