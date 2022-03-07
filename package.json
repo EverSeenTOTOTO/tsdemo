@@ -3,8 +3,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "dependencies": {
-    "reflect-metadata": "^0.1.13",
-    "uuid": "^8.3.2"
+    "puppeteer-core": "^13.4.1",
+    "reflect-metadata": "^0.1.13"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9",
@@ -19,8 +19,7 @@
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^13.0.0",
     "@types/jest": "^26.0.16",
-    "@types/node": "^14.14.10",
-    "@types/uuid": "^8.3.4",
+    "@types/node": "^17.0.21",
     "@typescript-eslint/eslint-plugin": "^4.9.0",
     "@typescript-eslint/parser": "^4.9.0",
     "babel-jest": "^26.6.3",

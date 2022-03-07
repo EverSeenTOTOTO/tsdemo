@@ -35,6 +35,7 @@ const opts = {
 
 export default [
   {
+    external: ['svelte', 'puppeteer-core'],
     input: path.resolve(__dirname, 'src/index.ts'),
     output: [
       {

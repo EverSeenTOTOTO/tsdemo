@@ -80,5 +80,14 @@ describe('test RegularExpression', () => {
     expect(chain.match([b])).toBe(true);
     expect(chain.match([])).toBe(true);
     expect(chain.match([a])).toBe(false);
+
+    // (aa(b*)|(b*))a
+    chain = chain.concat(new LiteralRegularExpression(a));
+
+    expect(chain.match([a])).toBe(true);
+    expect(chain.match([b, a])).toBe(true);
+    expect(chain.match([a, b, a])).toBe(false);
+
+    expect(chain.regex.toNFA().name).toBe('(aa(b*)|(b*))a');
   });
 });

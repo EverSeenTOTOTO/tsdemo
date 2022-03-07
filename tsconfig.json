@@ -15,6 +15,7 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
       "types": [
+        "node",
         "jest",
         "reflect-metadata"
       ],
