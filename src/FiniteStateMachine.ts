@@ -88,7 +88,7 @@ export class DeterministicFinitAutomachine<S extends State = State, I extends In
     return map;
   }
 
-  // 给定一个状态和一个输入，返回下一个状态。若无法跳转返回undefined
+  // 用于求取当前状态对给定输入的响应，返回undefined表示不发生跳转
   next(input: I, current?: S) {
     const currentState = current ?? this.initialState;
 
@@ -96,31 +96,15 @@ export class DeterministicFinitAutomachine<S extends State = State, I extends In
       return this.initialState;
     }
 
-    const nextState = this.transforms.get(currentState)?.get(input);
-
-    if (nextState) {
-      return nextState;
-    }
-
-    if (__DEV__) {
-      console.warn(`Unrecognized input for ${this.name}: ${input.name}`);
-    }
-
-    return undefined;
+    return this.transforms.get(currentState)?.get(input);
   }
 
-  // 给定一个输入串执行
-  run(inputs: I[], current?: S) {
+  // 用于求取系统在输入后的状态
+  runToNext(input: I, current?: S) {
     const currentState = current ?? this.initialState;
-    const states = [currentState];
+    const nextState = this.next(input, currentState);
 
-    for (const input of inputs) {
-      const prev = states[states.length - 1];
-
-      states.push(this.next(input, prev) ?? prev);
-    }
-
-    return states;
+    return nextState ?? currentState;
   }
 }
 
@@ -162,11 +146,17 @@ export class NondeterministicFiniteAutomachine<S extends State = State, I extend
     return this.finalStates.has(state);
   }
 
-  // 给定一个状态和一个输入，返回可到达的状态集合，若无法跳转返回空集
   next(input: I, current?: S) {
     const currentState = current ?? this.initialState;
     const nextState = this.transforms.get(currentState)?.get(input);
 
     return nextState ?? new StateSet<S>();
+  }
+
+  runToNext(input: I, current?: S) {
+    const currentState = current ?? this.initialState;
+    const nextState = this.next(input, currentState);
+
+    return nextState.vs()[0] ?? currentState;
   }
 }

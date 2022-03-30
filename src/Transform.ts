@@ -106,9 +106,8 @@ const computeReachableStates = (nfa: NondeterministicFiniteAutomachine, state: S
   const reachableStates = new NFATransform();
 
   for (const input of nfa.inputSet) {
-    if (input === Input.EPSILON) {
-      continue;
-    }
+    if (input === Input.EPSILON) continue;
+
     reachableStates.set(input, getNextStates(nfa, input, state));
   }
 
@@ -122,7 +121,8 @@ const computeReachableStates = (nfa: NondeterministicFiniteAutomachine, state: S
  */
 export const NFA2DFA = (nfa: NondeterministicFiniteAutomachine): DeterministicFinitAutomachine<MergedState> => {
   const subsets = getSubsets(nfa.stateSet);
-  // 存放NFA中每个小状态经过非EPSILON到达的状态集合，这些集合将合并为一个DFA中的大状态
+  // 存放NFA中每个小状态针对每个输入（除EPSILON）可到达的状态集合，方便取用
+  // 每个集合将成为为一个DFA中的大状态
   const table = new NFATransformTable();
 
   for (const state of nfa.stateSet) {
@@ -142,9 +142,8 @@ export const NFA2DFA = (nfa: NondeterministicFiniteAutomachine): DeterministicFi
       const transform = new DFATransform<MergedState>();
 
       for (const input of nfa.inputSet) {
-        if (input === Input.EPSILON) {
-          continue;
-        }
+        if (input === Input.EPSILON) continue;
+
         // NFA的小状态到达的状态合并之后是DFA的某个状态
         const nextStates = current.states.vs()
           .map((each) => table.get(each)?.get(input) ?? new StateSet())
@@ -180,7 +179,7 @@ export const NFA2DFA = (nfa: NondeterministicFiniteAutomachine): DeterministicFi
   return new DeterministicFinitAutomachine(nfa.name, map, initialState, finalStates);
 };
 
-// 给定一个输入串，返回是否可以达到接受状态
+// 给定一个输入串，是否可以到达接受状态
 export const accept = (machine: DeterministicFinitAutomachine|NondeterministicFiniteAutomachine, inputs: Input[]): boolean => {
   if (machine instanceof DeterministicFinitAutomachine) {
     let currentState: State|undefined = machine.initialState;

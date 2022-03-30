@@ -52,7 +52,6 @@ describe('FiniteStateMachine', () => {
     expect(M.stateSet.vs()).toEqual([q1, q2, q3]);
     expect(M.inputSet.vs()).toEqual([i0, i1]);
     expect(M.next(i0)).toBe(q1);
-    expect(M.run([])).toEqual([q1]);
 
     expect(M.reverseTransforms.get(q2)?.get(i0)).toBe(q3);
 
@@ -74,27 +73,6 @@ describe('FiniteStateMachine', () => {
     next(new Input('2'));
 
     expect(currentState).toBe(M.initialState);
-
-    const serial = M.run([
-      Input.RESET,
-      i1,
-      i0,
-      Input.RESET,
-      i1,
-      i1,
-      i0,
-    ], currentState);
-
-    expect(serial).toEqual([
-      q1,
-      q1,
-      q2,
-      q3,
-      q1,
-      q2,
-      q2,
-      q3,
-    ]);
 
     expect(accept(M, [
       Input.RESET,

@@ -1,9 +1,5 @@
 /* eslint-disable max-classes-per-file */
 /* eslint-disable no-extend-native */
-let localId = 0;
-
-export const uuid = () => String(localId++);
-
 export class ExtendMap<K, V> extends Map<K, V> {
   get length() {
     return this.ks().length;

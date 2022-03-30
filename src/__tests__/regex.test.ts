@@ -1,7 +1,12 @@
 import { Input } from '@/FiniteStateMachine';
 import {
   chainRegex,
-  ConcatRegularExpression, LiteralRegularExpression, StarRegularExpression, UnionRegularExpression,
+  ConcatRegularExpression,
+  EmptyRegularExpression,
+  EpsilonRegularExpression,
+  LiteralRegularExpression,
+  StarRegularExpression,
+  UnionRegularExpression,
 } from '../RegularExpression';
 
 describe('test RegularExpression', () => {
@@ -18,12 +23,41 @@ describe('test RegularExpression', () => {
     expect(R.match([new Input('a')])).toBe(false);
   });
 
+  test('test epsilon', () => {
+    const R = new EpsilonRegularExpression();
+
+    expect(R.toString()).toBe('ε');
+    expect(R.match([a])).toBe(false);
+    expect(R.match([b])).toBe(false);
+  });
+
+  test('test empty', () => {
+    const R = new EmptyRegularExpression();
+
+    expect(R.toString()).toBe('∅');
+    expect(R.match([])).toBe(false);
+    expect(R.match([a])).toBe(false);
+  });
+
   test('test concat', () => {
     const R1 = new LiteralRegularExpression(a);
     const R2 = new LiteralRegularExpression(b);
     const R = new ConcatRegularExpression(R1, R2);
 
     expect(R.left).toBe(R1);
+
+    expect(R.match([a])).toBe(false);
+    expect(R.match([a, b])).toBe(true);
+    expect(R.match([b, a])).toBe(false);
+    expect(R.match([a, b, a])).toBe(false);
+  });
+
+  test('test concat with epsilon', () => {
+    // R concat EPSILON = R
+    const Ra = new LiteralRegularExpression(a);
+    const Rb = new LiteralRegularExpression(b);
+    const R2 = new EmptyRegularExpression();
+    const R = new UnionRegularExpression(new ConcatRegularExpression(Ra, Rb), R2);
 
     expect(R.match([a])).toBe(false);
     expect(R.match([a, b])).toBe(true);
@@ -40,6 +74,19 @@ describe('test RegularExpression', () => {
 
     expect(R.match([a])).toBe(true);
     expect(R.match([b])).toBe(true);
+  });
+
+  test('test union with empty', () => {
+    // R union EMPTY = R
+    const Ra = new LiteralRegularExpression(a);
+    const Rb = new LiteralRegularExpression(b);
+    const R2 = new EmptyRegularExpression();
+    const R = new UnionRegularExpression(new ConcatRegularExpression(Ra, Rb), R2);
+
+    expect(R.match([a])).toBe(false);
+    expect(R.match([a, b])).toBe(true);
+    expect(R.match([b, a])).toBe(false);
+    expect(R.match([a, b, a])).toBe(false);
   });
 
   test('test star', () => {
@@ -89,5 +136,59 @@ describe('test RegularExpression', () => {
     expect(chain.match([a, b, a])).toBe(false);
 
     expect(chain.regex.toNFA().name).toBe('(aa(b*)|(b*))a');
+  });
+
+  test('test chain hard', () => {
+    // a
+    let chain = chainRegex(new LiteralRegularExpression(a));
+
+    // aa
+    chain = chain.concat(new LiteralRegularExpression(a));
+
+    expect(chain.match([a])).toBe(false);
+    expect(chain.match([a, a])).toBe(true);
+    expect(chain.match([a, a, a])).toBe(false);
+
+    // aaε
+    chain = chain.concat(new EpsilonRegularExpression());
+
+    expect(chain.match([a])).toBe(false);
+    expect(chain.match([a, a])).toBe(true);
+    expect(chain.match([a, a, a])).toBe(false);
+
+    // aaε∅
+    chain = chain.concat(new EmptyRegularExpression());
+
+    expect(chain.match([a, a])).toBe(false);
+
+    // (aaε∅)|εb
+    chain = chain.union(new ConcatRegularExpression(
+      new EpsilonRegularExpression(),
+      new LiteralRegularExpression(b),
+    ));
+
+    expect(chain.match([a, a])).toBe(false);
+    expect(chain.match([b])).toBe(true);
+    expect(chain.match([a, b])).toBe(false);
+    expect(chain.match([b, b])).toBe(false);
+    expect(chain.match([])).toBe(false);
+
+    // ((aaε∅)|εb)*
+    chain = chain.star();
+
+    expect(chain.match([a, a])).toBe(false);
+    expect(chain.match([b])).toBe(true);
+    expect(chain.match([a, b])).toBe(false);
+    expect(chain.match([b, b])).toBe(true);
+    expect(chain.match([])).toBe(true);
+
+    // ((aaε∅)|εb)*|∅
+    chain = chain.union(new EmptyRegularExpression());
+
+    expect(chain.match([a, a])).toBe(false);
+    expect(chain.match([b])).toBe(true);
+    expect(chain.match([a, b])).toBe(false);
+    expect(chain.match([b, b])).toBe(true);
+    expect(chain.match([])).toBe(true);
   });
 });

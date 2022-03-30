@@ -1,9 +1,13 @@
 /* eslint-disable class-methods-use-this */
 /* eslint-disable max-classes-per-file */
 import {
-  NondeterministicFiniteAutomachine, Input, State, NFATransformTable, NFATransform, StateSet,
+  NondeterministicFiniteAutomachine,
+  Input,
+  State,
+  NFATransformTable,
+  NFATransform,
+  StateSet,
 } from '@/FiniteStateMachine';
-import { uuid } from '@/utils';
 import { concat, star, union } from './Operation';
 import { accept } from './Transform';
 
@@ -34,9 +38,8 @@ export class LiteralRegularExpression implements RegularExpression {
 
   toNFA() {
     if (!this.nfa) {
-      const id = uuid();
-      const initialState = new State(`^${id} ${this.source.name}`);
-      const finalState = new State(`${id}$ ${this.source.name}`);
+      const initialState = new State(`^${this.source.name}`);
+      const finalState = new State(`${this.source.name}$`);
 
       this.nfa = new NondeterministicFiniteAutomachine(
         this.toString(),
@@ -50,6 +53,59 @@ export class LiteralRegularExpression implements RegularExpression {
         ]),
         initialState,
         new StateSet([finalState]),
+      );
+    }
+
+    return this.nfa;
+  }
+}
+
+export class EpsilonRegularExpression implements RegularExpression {
+  nfa?: NondeterministicFiniteAutomachine;
+
+  match(input: Input[]) {
+    return accept(this.toNFA(), input);
+  }
+
+  toString() {
+    return Input.EPSILON.name;
+  }
+
+  toNFA() {
+    const initialState = new State(`^${Input.EPSILON.name}$`);
+    if (!this.nfa) {
+      this.nfa = new NondeterministicFiniteAutomachine(
+        this.toString(),
+        new NFATransformTable(),
+        initialState,
+        new StateSet([initialState]),
+      );
+    }
+
+    return this.nfa;
+  }
+}
+
+export class EmptyRegularExpression implements RegularExpression {
+  nfa?: NondeterministicFiniteAutomachine;
+
+  match(input: Input[]) {
+    return accept(this.toNFA(), input);
+  }
+
+  toString() {
+    return '∅';
+  }
+
+  toNFA() {
+    if (!this.nfa) {
+      const initialState = new State(`^${this.toString()}`);
+
+      this.nfa = new NondeterministicFiniteAutomachine(
+        this.toString(),
+        new NFATransformTable(),
+        initialState,
+        new StateSet(),
       );
     }
 
@@ -148,6 +204,7 @@ export class StarRegularExpression implements RegularExpression {
     return this.nfa;
   }
 }
+
 export const chainRegex = (r: RegularExpression) => {
   return {
     regex: r,
