@@ -3,6 +3,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "dependencies": {
+    "cli-table": "^0.3.11",
     "puppeteer-core": "^13.4.1",
     "reflect-metadata": "^0.1.13"
   },

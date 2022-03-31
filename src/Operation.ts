@@ -10,7 +10,7 @@ import {
 // 并运算
 export const union = (a: NondeterministicFiniteAutomachine, b: NondeterministicFiniteAutomachine) => {
   // 新的起始状态
-  const initialState = new State(`${a.initialState.name}|${b.initialState.name}`);
+  const initialState = new State(`^${a.initialState.name}|${b.initialState.name}`);
   // 新的接受状态是a和b的接受状态并集
   const finalStates = StateSet.union(a.finalStates, b.finalStates);
 
@@ -93,7 +93,7 @@ export const concat = (a: NondeterministicFiniteAutomachine, b: Nondeterministic
 // 星号运算
 export const star = (nfa: NondeterministicFiniteAutomachine) => {
   // 新的起始状态
-  const initialState = new State(`${nfa.initialState.name}*`);
+  const initialState = new State(`^${nfa.initialState.name}*`);
 
   // 新的起始状态也是接受状态
   const finalStates = new StateSet(nfa.finalStates);

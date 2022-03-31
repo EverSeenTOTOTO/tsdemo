@@ -61,7 +61,6 @@ describe('test Operation', () => {
 
     const U = union(N1, N2);
 
-    expect(U.initialState.name).toBe(`${N1.initialState.name}|${N2.initialState.name}`);
     expect(U.finalStates.vs()).toEqual([
       ...N1.finalStates.vs(),
       ...N2.finalStates.vs(),
@@ -175,7 +174,6 @@ describe('test Operation', () => {
 
     const S = star(N);
 
-    expect(S.name).toBe(`(${N.name}*)`);
     expect(S.finalStates.vs()).toEqual([
       ...N.finalStates.vs(),
       S.initialState,

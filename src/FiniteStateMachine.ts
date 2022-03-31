@@ -1,4 +1,5 @@
 /* eslint-disable max-classes-per-file */
+import Table from 'cli-table';
 import { ExtendSet, ExtendMap } from '@/utils';
 
 // 状态
@@ -18,9 +19,9 @@ export class Input {
     this.name = name;
   }
 
-  static RESET = new Input('<reset>');
-
   static EPSILON = new Input('ε');
+
+  static EMPTY = new Input('∅');
 }
 
 export class DFATransform<S extends State = State, I extends Input = Input> extends ExtendMap<I, S> {}
@@ -67,34 +68,9 @@ export class DeterministicFinitAutomachine<S extends State = State, I extends In
     return this.finalStates.has(state);
   }
 
-  // 根据每个状态，找到哪些状态可以到达它
-  get reverseTransforms(): DFATransformTable<S, I> {
-    const map = new DFATransformTable<S, I>();
-
-    for (const state of this.stateSet) {
-      const transform = new DFATransform<S, I>();
-
-      for (const prevState of this.stateSet) {
-        for (const input of this.inputSet) {
-          if (this.next(input, prevState) === state) {
-            transform.set(input, prevState);
-          }
-        }
-      }
-
-      map.set(state, transform);
-    }
-
-    return map;
-  }
-
   // 用于求取当前状态对给定输入的响应，返回undefined表示不发生跳转
   next(input: I, current?: S) {
     const currentState = current ?? this.initialState;
-
-    if (input === Input.RESET) {
-      return this.initialState;
-    }
 
     return this.transforms.get(currentState)?.get(input);
   }
@@ -105,6 +81,29 @@ export class DeterministicFinitAutomachine<S extends State = State, I extends In
     const nextState = this.next(input, currentState);
 
     return nextState ?? currentState;
+  }
+
+  toString() {
+    const inputs = this.inputSet.vs().sort((a, b) => (a.name < b.name ? -1 : 0));
+    const transformTable = new Table({
+      rows: [
+        ['state/input', ...inputs.map((i) => i.name)],
+        ...this.stateSet.vs().map((s) => {
+          return [s.name, ...inputs.map((i) => this.next(i, s)?.name ?? '')];
+        }),
+      ],
+    });
+    const table = new Table({
+      rows: [
+        ['DFA', this.name],
+        ['inputSet', `{${inputs.map((i) => i.name).join(', ')}}`],
+        ['initialState', this.initialState.name],
+        ['finalStates', `{${this.finalStates.vs().map((s) => s.name).sort().join(', ')}}`],
+        ['transformTable', transformTable],
+      ],
+    });
+
+    return table.toString();
   }
 }
 
@@ -158,5 +157,30 @@ export class NondeterministicFiniteAutomachine<S extends State = State, I extend
     const nextState = this.next(input, currentState);
 
     return nextState.vs()[0] ?? currentState;
+  }
+
+  toString() {
+    const inputs = this.inputSet.vs().sort((a, b) => (a.name < b.name ? -1 : 0));
+    const transformTable = new Table({
+      rows: [
+        ['state/input', ...inputs.map((i) => i.name)],
+        ...this.stateSet.vs().map((s) => {
+          return [s.name, ...inputs
+            .map((i) => this.next(i, s)?.vs() ?? [])
+            .map((each) => (each.length > 0 ? `{${each.map((x) => x.name).sort().join(',')}}` : ''))];
+        }),
+      ],
+    });
+    const table = new Table({
+      rows: [
+        ['NFA', this.name],
+        ['inputSet', `{${inputs.map((i) => i.name).join(', ')}}`],
+        ['initialState', this.initialState.name],
+        ['finalStates', `{${this.finalStates.vs().map((s) => s.name).sort().join(', ')}}`],
+        ['transformTable', transformTable],
+      ],
+    });
+
+    return table.toString();
   }
 }

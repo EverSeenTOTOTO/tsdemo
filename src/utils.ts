@@ -13,10 +13,6 @@ export class ExtendMap<K, V> extends Map<K, V> {
     return [...this.keys()];
   }
 
-  es() {
-    return [...this.entries()];
-  }
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static None = new ExtendMap<any, any>();
 }

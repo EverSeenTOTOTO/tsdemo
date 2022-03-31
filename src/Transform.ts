@@ -22,15 +22,17 @@ export class MergedState extends State {
   }
 }
 
-export const createStateSet = (s: StateSet) => new MergedState(
-  s.vs().map((state) => state.name).join(' '),
-  s,
-);
-
 // 求一个集合的全部子集
 export const getSubsets = (stateSet: StateSet) => {
   return new StateSet(
-    stateSet.subsets().vs().map(createStateSet).sort((a, b) => (a.name < b.name ? -1 : 0)),
+    stateSet
+      .subsets()
+      .vs()
+      .map((s) => new MergedState(
+        s.vs().map((state) => state.name).join(' '),
+        s,
+      ))
+      .sort((a, b) => (a.name < b.name ? -1 : 0)),
   );
 };
 
@@ -41,8 +43,6 @@ export const findStateInSubstates = (sets: StateSet<MergedState>, states: StateS
       return set;
     }
   }
-
-  console.log(sets, states);
 
   throw new Error('Cannot find state set in subsets');
 };

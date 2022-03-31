@@ -16,7 +16,7 @@ describe('test RegularExpression', () => {
   test('test literal', () => {
     const R = new LiteralRegularExpression(a);
 
-    expect(R.source.name).toBe('a');
+    expect(R.source).toBe(a);
     expect(R.match([a])).toBe(true);
 
     // different reference
@@ -26,7 +26,7 @@ describe('test RegularExpression', () => {
   test('test epsilon', () => {
     const R = new EpsilonRegularExpression();
 
-    expect(R.toString()).toBe('ε');
+    expect(R.toString()).toBe(Input.EPSILON.name);
     expect(R.match([a])).toBe(false);
     expect(R.match([b])).toBe(false);
   });
@@ -34,7 +34,7 @@ describe('test RegularExpression', () => {
   test('test empty', () => {
     const R = new EmptyRegularExpression();
 
-    expect(R.toString()).toBe('∅');
+    expect(R.toString()).toBe(Input.EMPTY.name);
     expect(R.match([])).toBe(false);
     expect(R.match([a])).toBe(false);
   });
@@ -53,16 +53,16 @@ describe('test RegularExpression', () => {
   });
 
   test('test concat with epsilon', () => {
-    // R concat EPSILON = R
+    // R EPSILON = R
     const Ra = new LiteralRegularExpression(a);
     const Rb = new LiteralRegularExpression(b);
-    const R2 = new EmptyRegularExpression();
-    const R = new UnionRegularExpression(new ConcatRegularExpression(Ra, Rb), R2);
+    const R2 = new EpsilonRegularExpression();
+    const R = new ConcatRegularExpression(new ConcatRegularExpression(Ra, Rb), R2);
 
     expect(R.match([a])).toBe(false);
     expect(R.match([a, b])).toBe(true);
     expect(R.match([b, a])).toBe(false);
-    expect(R.match([a, b, a])).toBe(false);
+    expect(R.match([a, b, b])).toBe(false);
   });
 
   test('test union', () => {
@@ -77,7 +77,7 @@ describe('test RegularExpression', () => {
   });
 
   test('test union with empty', () => {
-    // R union EMPTY = R
+    // R | EMPTY = R
     const Ra = new LiteralRegularExpression(a);
     const Rb = new LiteralRegularExpression(b);
     const R2 = new EmptyRegularExpression();
@@ -103,7 +103,7 @@ describe('test RegularExpression', () => {
     )).toBe(true);
   });
 
-  test('test chain', () => {
+  test('test chain1', () => {
     // a
     let chain = chainRegex(new LiteralRegularExpression(a));
 
@@ -138,7 +138,7 @@ describe('test RegularExpression', () => {
     expect(chain.regex.toNFA().name).toBe('(aa(b*)|(b*))a');
   });
 
-  test('test chain hard', () => {
+  test('test chain2', () => {
     // a
     let chain = chainRegex(new LiteralRegularExpression(a));
 
@@ -190,5 +190,19 @@ describe('test RegularExpression', () => {
     expect(chain.match([a, b])).toBe(false);
     expect(chain.match([b, b])).toBe(true);
     expect(chain.match([])).toBe(true);
+  });
+
+  test('test chain3', () => {
+    let chain = chainRegex(new EpsilonRegularExpression());
+    chain = chain.concat(new StarRegularExpression(new LiteralRegularExpression(a)));
+    chain = chain.concat(new LiteralRegularExpression(b));
+    chain = chain.concat(new EpsilonRegularExpression());
+
+    expect(chain.regex.toString()).toBe('(((ε(a*))b)ε)');
+    expect(chain.match([a])).toBe(false);
+    expect(chain.match([a, b])).toBe(true);
+    expect(chain.match([a, a, a, a])).toBe(false);
+    expect(chain.match([a, a, a, a, a, a, b])).toBe(true);
+    expect(chain.match([a, a, a, a, a, a, b, b])).toBe(false);
   });
 });

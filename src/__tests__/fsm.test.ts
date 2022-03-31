@@ -49,11 +49,11 @@ describe('FiniteStateMachine', () => {
       new StateSet([q2]),
     );
 
+    console.log(M.toString());
+
     expect(M.stateSet.vs()).toEqual([q1, q2, q3]);
     expect(M.inputSet.vs()).toEqual([i0, i1]);
     expect(M.next(i0)).toBe(q1);
-
-    expect(M.reverseTransforms.get(q2)?.get(i0)).toBe(q3);
 
     let currentState = M.initialState;
     const next = (input: Input) => {
@@ -69,13 +69,7 @@ describe('FiniteStateMachine', () => {
 
     expect(currentState).toBe(q3);
 
-    next(Input.RESET);
-    next(new Input('2'));
-
-    expect(currentState).toBe(M.initialState);
-
     expect(accept(M, [
-      Input.RESET,
       i1,
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
@@ -84,7 +78,6 @@ describe('FiniteStateMachine', () => {
       i0,
     ])).toBe(false);
     expect(accept(M, [
-      Input.RESET,
       i1,
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
@@ -134,16 +127,10 @@ describe('FiniteStateMachine', () => {
       new StateSet([q4]),
     );
 
+    console.log(M.toString());
     expect(M.stateSet.vs()).toEqual([q1, q2, q3, q4]);
 
-    expect(M.next(Input.RESET).vs()).toEqual([]);
-    expect(M.next(i1, q1).vs()).toEqual([q1, q2]);
-    expect(M.next(Input.EPSILON, q2).vs()).toEqual([q3]);
-
-    expect(M.isFinal(q2)).toBe(false);
-
     const inputs = [
-      Input.RESET,
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       // eslint-disable-next-line prefer-spread
