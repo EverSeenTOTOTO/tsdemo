@@ -12,3 +12,10 @@ declare module '*.svelte' {
   const value: any;
   export default value;
 }
+
+declare module 'cli-table' {
+  export default class Table {
+    constructor(options?: any);
+    toString(): string;
+  }
+}

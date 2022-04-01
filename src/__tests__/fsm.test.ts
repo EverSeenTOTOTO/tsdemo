@@ -96,7 +96,6 @@ describe('FiniteStateMachine', () => {
           new NFATransform([
             [i0, new StateSet([q1])],
             [i1, new StateSet([q1, q2])],
-            [Input.EPSILON, StateSet.None],
           ]),
         ],
         [
@@ -110,16 +109,13 @@ describe('FiniteStateMachine', () => {
         [
           q3,
           new NFATransform([
-            [i0, StateSet.None],
             [i1, new StateSet([q1])],
-            [Input.EPSILON, StateSet.None],
           ]),
         ],
         [
           q4,
           new NFATransform([
             [i1, new StateSet([q2])],
-            [Input.EPSILON, StateSet.None],
           ]),
         ],
       ]),

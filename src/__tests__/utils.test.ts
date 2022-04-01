@@ -1,4 +1,4 @@
-import { ExtendMap, ExtendSet } from '@/utils';
+import { ExtendMap, ExtendSet, flattern } from '@/utils';
 
 describe('test utils', () => {
   test('test ExtendMap', () => {
@@ -48,5 +48,11 @@ describe('test utils', () => {
       [1, 2, 3],
     ]);
     expect(new ExtendSet([1, 2, 3, 4, 5]).subsets().vs().length).toBe(2 ** 5);
+  });
+
+  test('test flattern', () => {
+    expect(flattern([])).toEqual([]);
+    expect(flattern([[]])).toEqual([]);
+    expect(flattern([[1, 2], [3, 4]])).toEqual([1, 2, 3, 4]);
   });
 });

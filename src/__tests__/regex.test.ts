@@ -134,8 +134,6 @@ describe('test RegularExpression', () => {
     expect(chain.match([a])).toBe(true);
     expect(chain.match([b, a])).toBe(true);
     expect(chain.match([a, b, a])).toBe(false);
-
-    expect(chain.regex.toNFA().name).toBe('(aa(b*)|(b*))a');
   });
 
   test('test chain2', () => {

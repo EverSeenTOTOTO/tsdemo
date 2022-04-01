@@ -1,6 +1,6 @@
 /* eslint-disable max-classes-per-file */
 import Table from 'cli-table';
-import { ExtendSet, ExtendMap } from '@/utils';
+import { ExtendSet, ExtendMap, flattern } from '@/utils';
 
 // 状态
 export class State {
@@ -22,12 +22,15 @@ export class Input {
   static EPSILON = new Input('ε');
 
   static EMPTY = new Input('∅');
+
+  static $ = new Input('$');
 }
+
+export class StateSet<S extends State = State> extends ExtendSet<S> {}
+export class InputSet<I extends Input = Input> extends ExtendSet<I> {}
 
 export class DFATransform<S extends State = State, I extends Input = Input> extends ExtendMap<I, S> {}
 export class DFATransformTable<S extends State = State, I extends Input = Input> extends ExtendMap<S, DFATransform<S, I>> {}
-export class StateSet<S extends State = State> extends ExtendSet<S> {}
-export class InputSet<I extends Input = Input> extends ExtendSet<I> {}
 
 // 确定性有穷自动机
 export class DeterministicFinitAutomachine<S extends State = State, I extends Input = Input> {
@@ -58,9 +61,8 @@ export class DeterministicFinitAutomachine<S extends State = State, I extends In
   }
 
   get inputSet(): InputSet<I> {
-    return new InputSet<I>(this.transforms.vs()
-      .map((transform) => [...transform.keys()].sort((a, b) => (a.name < b.name ? -1 : 0)))
-      .reduce((prev, curr) => [...curr, ...prev], []));
+    return new InputSet<I>(flattern(this.transforms.vs()
+      .map((transform) => [...transform.keys()].sort((a, b) => (a.name < b.name ? -1 : 0)))));
   }
 
   // 判断一个状态是否在接受状态中
@@ -75,23 +77,16 @@ export class DeterministicFinitAutomachine<S extends State = State, I extends In
     return this.transforms.get(currentState)?.get(input);
   }
 
-  // 用于求取系统在输入后的状态
-  runToNext(input: I, current?: S) {
-    const currentState = current ?? this.initialState;
-    const nextState = this.next(input, currentState);
-
-    return nextState ?? currentState;
-  }
-
   toString() {
     const inputs = this.inputSet.vs().sort((a, b) => (a.name < b.name ? -1 : 0));
     const transformTable = new Table({
-      rows: [
-        ['state/input', ...inputs.map((i) => i.name)],
-        ...this.stateSet.vs().map((s) => {
-          return [s.name, ...inputs.map((i) => this.next(i, s)?.name ?? '')];
-        }),
-      ],
+      rows: this.transforms.ks().map((state) => {
+        const transform = this.transforms.get(state);
+        return flattern(transform!.ks().map((input) => {
+          const next = transform!.get(input);
+          return `${state.name} + ${input.name} -> ${next!.name}`;
+        }));
+      }),
     });
     const table = new Table({
       rows: [
@@ -136,9 +131,8 @@ export class NondeterministicFiniteAutomachine<S extends State = State, I extend
   }
 
   get inputSet(): InputSet<I> {
-    return new InputSet<I>(this.transforms.vs()
-      .map((transform) => [...transform.keys()].sort((a, b) => (a.name < b.name ? -1 : 0)))
-      .reduce((prev, curr) => [...curr, ...prev], []));
+    return new InputSet<I>(flattern(this.transforms.vs()
+      .map((transform) => [...transform.keys()].sort((a, b) => (a.name < b.name ? -1 : 0)))));
   }
 
   isFinal(state:S) {
@@ -152,24 +146,18 @@ export class NondeterministicFiniteAutomachine<S extends State = State, I extend
     return nextState ?? new StateSet<S>();
   }
 
-  runToNext(input: I, current?: S) {
-    const currentState = current ?? this.initialState;
-    const nextState = this.next(input, currentState);
-
-    return nextState.vs()[0] ?? currentState;
-  }
-
   toString() {
     const inputs = this.inputSet.vs().sort((a, b) => (a.name < b.name ? -1 : 0));
     const transformTable = new Table({
-      rows: [
-        ['state/input', ...inputs.map((i) => i.name)],
-        ...this.stateSet.vs().map((s) => {
-          return [s.name, ...inputs
-            .map((i) => this.next(i, s)?.vs() ?? [])
-            .map((each) => (each.length > 0 ? `{${each.map((x) => x.name).sort().join(',')}}` : ''))];
-        }),
-      ],
+      rows: this.transforms.ks().map((state) => {
+        const transform = this.transforms.get(state);
+        return flattern(transform!.ks().map((input) => {
+          const next = transform!.get(input);
+          return next!.vs().map((result) => {
+            return `${state.name} + ${input.name} -> ${result.name}`;
+          });
+        }));
+      }),
     });
     const table = new Table({
       rows: [

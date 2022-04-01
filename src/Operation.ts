@@ -83,7 +83,7 @@ export const concat = (a: NondeterministicFiniteAutomachine, b: Nondeterministic
   }
 
   return new NondeterministicFiniteAutomachine(
-    `${a.name}${b.name}`,
+    `(${a.name}${b.name})`,
     map,
     a.initialState,
     b.finalStates,

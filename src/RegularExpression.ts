@@ -307,20 +307,37 @@ export const DFA2Regex = (dfa: DeterministicFinitAutomachine) => {
     return transform?.ks().find((i) => transform.get(i)?.has(qb))?.regex;
   };
 
+  const removeState = (qx: State) => {
+    gnfa.stateSet.delete(qx);
+    gnfa.transforms.delete(qx);
+    for (const state of gnfa.stateSet) {
+      const transform = gnfa.transforms.get(state);
+      if (transform) {
+        for (const input of transform.ks()) {
+          const set = transform.get(input);
+          set?.delete(qx);
+          if (set && set.length > 0) {
+            transform.set(input, set);
+          } else {
+            transform.delete(input);
+          }
+        }
+      }
+    }
+  };
   // q1->qx R1
   // qx->q2 R2
   // qx->qx R3
   // q1->q2 R4
   // remove qx, q1->q2: (R1 R3* R2)|R4
   // repeat until gnfa has only two states: the initialState and the finalState
-  const states = gnfa.stateSet;
-  while (states.length > 2) {
-    for (const qx of states) {
+  while (gnfa.stateSet.length > 2) {
+    for (const qx of gnfa.stateSet) {
       // 选择一个所有不是起始和结束状态的状态qx
       if (qx === gnfa.initialState || gnfa.isFinal(qx)) continue;
-      for (const q1 of states) { // 任选一个不是结束状态和qx的q1，GNFA的结束状态无转换
+      for (const q1 of gnfa.stateSet) { // 任选一个不是结束状态和qx的q1，GNFA的结束状态无转换
         if (q1 === qx || gnfa.isFinal(q1)) continue;
-        for (const q2 of states) { // 任选一个不是qx的q2
+        for (const q2 of gnfa.stateSet) { // 任选一个不是qx的q2
           if (q2 === qx) continue;
           const R1 = findRegex(q1, qx);
           const R2 = findRegex(qx, q2);
@@ -354,22 +371,7 @@ export const DFA2Regex = (dfa: DeterministicFinitAutomachine) => {
         }
       }
       // 移除qx
-      states.delete(qx);
-      gnfa.transforms.delete(qx);
-      for (const state of states) {
-        const transform = gnfa.transforms.get(state);
-        if (transform) {
-          for (const input of transform.ks()) {
-            const set = transform.get(input);
-            set?.delete(qx);
-            if (set && set.length > 0) {
-              transform.set(input, set);
-            } else {
-              transform.delete(input);
-            }
-          }
-        }
-      }
+      removeState(qx);
       break;
     }
   }

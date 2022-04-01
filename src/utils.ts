@@ -79,3 +79,17 @@ export class ExtendSet<T> extends Set<T> {
     return new ExtendSet<P>(sets.map((s) => s.vs()).reduce((prev, curr) => [...prev, ...curr], []));
   }
 }
+
+export const repeat = <T>(x: T, length: number): T[] => {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  // eslint-disable-next-line prefer-spread
+  return Array.apply(null, { length }).map(() => x);
+};
+
+export const flattern = (arr: any[]): any[] => {
+  return arr.reduce((prev, curr) => [
+    ...prev,
+    ...Array.isArray(curr) ? flattern(curr) : [curr],
+  ], []);
+};

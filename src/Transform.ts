@@ -36,7 +36,7 @@ export class MergedState extends State {
 //   );
 // };
 
-// 给定子集，在全部子集中找到相等的集合，避免new两个相同的集合进行相等比较，由于引用不同返回不相等
+// 给定子集，在全部子集中找到相等的集合，避免new两个相同的集合进行相等比较
 // 早先的实现时在全集里面找，但是求全部子集时若元素较多会栈溢出
 export const findStateInSubstates = (sets: StateSet<MergedState>, states: StateSet) => {
   for (const set of sets) {
@@ -126,7 +126,7 @@ const computeReachableStates = (nfa: NondeterministicFiniteAutomachine, state: S
  * @returns {DeterministicFinitAutomachine} DFA
  */
 export const NFA2DFA = (nfa: NondeterministicFiniteAutomachine): DeterministicFinitAutomachine<MergedState> => {
-  const subsets = new StateSet();
+  const subsets = new StateSet<MergedState>();
   // 存放NFA中每个小状态针对每个输入（除EPSILON）可到达的状态集合，方便取用
   // 每个集合将成为为一个DFA中的大状态
   const table = new NFATransformTable();
