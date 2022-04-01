@@ -300,7 +300,6 @@ export const DFA2GNFA = (dfa: DeterministicFinitAutomachine) => {
 export const DFA2Regex = (dfa: DeterministicFinitAutomachine) => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const gnfa = DFA2GNFA(dfa);
-  // debugger;
 
   const findRegex = (qa: State, qb: State) => {
     const transform = gnfa.transforms.get(qa);
@@ -321,21 +320,32 @@ export const DFA2Regex = (dfa: DeterministicFinitAutomachine) => {
       if (qx === gnfa.initialState || gnfa.isFinal(qx)) continue;
       for (const q1 of states) { // 任选一个不是结束状态和qx的q1，GNFA的结束状态无转换
         if (q1 === qx || gnfa.isFinal(q1)) continue;
-        for (const q2 of states) { // 任选一个不是q1和qx的q2
-          if (q2 === qx || q2 === q1) continue;
+        for (const q2 of states) { // 任选一个不是qx的q2
+          if (q2 === qx) continue;
           const R1 = findRegex(q1, qx);
           const R2 = findRegex(qx, q2);
+          let R:RegularExpression|undefined;
 
           if (R1 && R2) {
             const R3 = findRegex(qx, qx);
             const R4 = findRegex(q1, q2);
-            let R: RegularExpression = R3
+
+            R = R3
               ? new ConcatRegularExpression(new ConcatRegularExpression(R1, new StarRegularExpression(R3)), R2)
               : new ConcatRegularExpression(R1, R2);
             R = R4 ? new UnionRegularExpression(R, R4) : R;
 
             if (R) {
               const transform = gnfa.transforms.get(q1) ?? new NFATransform();
+
+              if (R4) { // 如果R4存在，新的transform需取代之
+                for (const input of transform.ks()) {
+                  if (transform.get(input)?.has(q2)) {
+                    transform.delete(input);
+                    break;
+                  }
+                }
+              }
 
               transform.set(new GNFAInput(R), new StateSet([q2]));
               gnfa.transforms.set(q1, transform);

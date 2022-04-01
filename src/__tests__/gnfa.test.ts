@@ -7,6 +7,7 @@ import {
   DeterministicFinitAutomachine,
 } from '@/FiniteStateMachine';
 import { DFA2GNFA, DFA2Regex } from '@/RegularExpression';
+import { accept } from '@/Transform';
 
 describe('test GNFA', () => {
   const q1 = new State('q1');
@@ -92,5 +93,63 @@ describe('test GNFA', () => {
     expect(regex?.match([a, a, a, a])).toBe(false);
     expect(regex?.match([a, a, a, a, a, a, b])).toBe(true);
     expect(regex?.match([a, a, a, a, a, a, b, b])).toBe(false);
+  });
+
+  const q3 = new State('q3');
+
+  test('test DFA2Regex2', () => {
+    const dfa = new DeterministicFinitAutomachine(
+      'M',
+      new DFATransformTable([
+        [
+          q1,
+          new DFATransform([
+            [a, q2],
+            [b, q3],
+          ]),
+        ],
+        [
+          q2,
+          new DFATransform([
+            [a, q1],
+            [b, q2],
+          ]),
+        ],
+        [
+          q3,
+          new DFATransform([
+            [a, q2],
+            [b, q1],
+          ]),
+        ],
+      ]),
+      q1,
+      new StateSet([q2, q3]),
+    );
+
+    const regex = DFA2Regex(dfa);
+
+    console.log(regex?.toString());
+    console.log(regex?.toNFA().toString());
+
+    expect(accept(dfa, [a])).toBe(true);
+    expect(accept(dfa, [a, b])).toBe(true);
+    expect(accept(dfa, [a, a, b])).toBe(true);
+    expect(accept(dfa, [a, a, b, b])).toBe(false);
+    expect(accept(dfa, [a, a, a, b])).toBe(true);
+    expect(accept(dfa, [a, b, b, b])).toBe(true);
+    expect(accept(dfa, [b, b, b])).toBe(true);
+    expect(accept(dfa, [b, b, b, a])).toBe(true);
+    expect(accept(dfa, [b, b, b, a, a])).toBe(false);
+
+    expect(regex?.match([a])).toBe(true);
+    expect(regex?.match([a, b])).toBe(true);
+    expect(regex?.match([a, a, b])).toBe(true);
+    expect(regex?.match([a, a, b, b])).toBe(false);
+    expect(regex?.match([a, a, a, b])).toBe(true);
+    expect(regex?.match([a, b, b, b])).toBe(true);
+    expect(regex?.match([b, b, b])).toBe(true);
+    expect(regex?.match([b, b, b, a])).toBe(true);
+    expect(regex?.match([b, b, b, a, a])).toBe(false);
   });
 });

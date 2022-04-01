@@ -23,20 +23,21 @@ export class MergedState extends State {
 }
 
 // 求一个集合的全部子集
-export const getSubsets = (stateSet: StateSet) => {
-  return new StateSet(
-    stateSet
-      .subsets()
-      .vs()
-      .map((s) => new MergedState(
-        s.vs().map((state) => state.name).join(' '),
-        s,
-      ))
-      .sort((a, b) => (a.name < b.name ? -1 : 0)),
-  );
-};
+// export const getSubsets = (stateSet: StateSet) => {
+//   return new StateSet(
+//     stateSet
+//       .subsets()
+//       .vs()
+//       .map((s) => new MergedState(
+//         s.vs().map((state) => state.name).join(' '),
+//         s,
+//       ))
+//       .sort((a, b) => (a.name < b.name ? -1 : 0)),
+//   );
+// };
 
 // 给定子集，在全部子集中找到相等的集合，避免new两个相同的集合进行相等比较，由于引用不同返回不相等
+// 早先的实现时在全集里面找，但是求全部子集时若元素较多会栈溢出
 export const findStateInSubstates = (sets: StateSet<MergedState>, states: StateSet) => {
   for (const set of sets) {
     if (StateSet.isSame(set.states, states)) {
@@ -44,7 +45,12 @@ export const findStateInSubstates = (sets: StateSet<MergedState>, states: StateS
     }
   }
 
-  throw new Error('Cannot find state set in subsets');
+  // 如果没有就新增
+  const newSubState = new MergedState(states.vs().map((s) => s.name).join(' '), states);
+
+  sets.add(newSubState);
+
+  return newSubState;
 };
 
 /**
@@ -120,7 +126,7 @@ const computeReachableStates = (nfa: NondeterministicFiniteAutomachine, state: S
  * @returns {DeterministicFinitAutomachine} DFA
  */
 export const NFA2DFA = (nfa: NondeterministicFiniteAutomachine): DeterministicFinitAutomachine<MergedState> => {
-  const subsets = getSubsets(nfa.stateSet);
+  const subsets = new StateSet();
   // 存放NFA中每个小状态针对每个输入（除EPSILON）可到达的状态集合，方便取用
   // 每个集合将成为为一个DFA中的大状态
   const table = new NFATransformTable();
