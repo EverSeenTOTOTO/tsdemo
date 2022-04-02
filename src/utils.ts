@@ -80,6 +80,20 @@ export class ExtendSet<T> extends Set<T> {
   }
 }
 
+export class ExtendArray<T> extends Array<T> {
+  static isSame<P>(a: ExtendArray<P>, b: ExtendArray<P>) {
+    if (a.length !== b.length) return false;
+
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+}
+
 export const repeat = <T>(x: T, length: number): T[] => {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore

@@ -21,33 +21,23 @@ describe('test PDA', () => {
     'P',
     new PDATransformTable([
       [
-        [q1, Input.EPSILON],
+        q1,
         new PDATransform([
-          [Input.EPSILON, new ExtendSet([[q2, Input.$]])],
+          [Input.EPSILON, new ExtendSet([[q2, Input.EPSILON, Input.$]])],
         ]),
       ],
       [
-        [q2, Input.EPSILON],
+        q2,
         new PDATransform([
-          [a, new ExtendSet([[q2, a]])],
+          [a, new ExtendSet([[q2, Input.EPSILON, a]])],
+          [b, new ExtendSet([[q3, a, Input.EPSILON]])],
         ]),
       ],
       [
-        [q2, a],
+        q3,
         new PDATransform([
-          [b, new ExtendSet([[q3, Input.EPSILON]])],
-        ]),
-      ],
-      [
-        [q3, a],
-        new PDATransform([
-          [b, new ExtendSet([[q3, Input.EPSILON]])],
-        ]),
-      ],
-      [
-        [q3, Input.$],
-        new PDATransform([
-          [Input.EPSILON, new ExtendSet([[q4, Input.EPSILON]])],
+          [b, new ExtendSet([[q3, a, Input.EPSILON]])],
+          [Input.EPSILON, new ExtendSet([[q4, Input.$, Input.EPSILON]])],
         ]),
       ],
     ]),
@@ -62,12 +52,6 @@ describe('test PDA', () => {
     expect(pda.finalStates.vs()).toEqual([q1, q4]);
     expect(pda.inputSet.vs()).toEqual([Input.EPSILON, a, b]);
     expect(pda.stateSet.vs()).toEqual([q1, q2, q3, q4]);
-  });
-
-  test('test next', () => {
-    expect(pda.next(a).vs()).toEqual([]);
-    expect(pda.next(Input.EPSILON).vs()).toEqual([]);
-    expect(pda.next(a, [q2, Input.EPSILON]).vs()[0]).toEqual([q2, a]);
-    expect(pda.next(b, [q3, a]).vs()[0]).toEqual([q3, Input.EPSILON]);
+    expect(pda.next(Input.EPSILON).vs()[0]).toEqual([q2, Input.EPSILON, Input.$]);
   });
 });

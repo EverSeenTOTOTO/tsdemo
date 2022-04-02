@@ -73,13 +73,21 @@ export class EpsilonRegularExpression implements RegularExpression {
   }
 
   toNFA() {
-    const initialState = new State(`^${Input.EPSILON.name}$`);
+    const initialState = new State(`^${Input.EPSILON.name}`);
+    const finalState = new State(`${Input.EPSILON.name}$`);
     if (!this.nfa) {
       this.nfa = new NondeterministicFiniteAutomachine(
         this.toString(),
-        new NFATransformTable(),
+        new NFATransformTable([
+          [
+            initialState,
+            new NFATransform([
+              [Input.EPSILON, new StateSet([finalState])],
+            ]),
+          ],
+        ]),
         initialState,
-        new StateSet([initialState]),
+        new StateSet([finalState]),
       );
     }
 

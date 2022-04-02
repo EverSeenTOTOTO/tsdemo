@@ -80,13 +80,13 @@ export class DeterministicFinitAutomachine<S extends State = State, I extends In
   toString() {
     const inputs = this.inputSet.vs().sort((a, b) => (a.name < b.name ? -1 : 0));
     const transformTable = new Table({
-      rows: this.transforms.ks().map((state) => {
+      rows: flattern(this.transforms.ks().map((state) => {
         const transform = this.transforms.get(state);
-        return flattern(transform!.ks().map((input) => {
+        return transform!.ks().map((input) => {
           const next = transform!.get(input);
           return `${state.name} + ${input.name} -> ${next!.name}`;
-        }));
-      }),
+        });
+      })).map((x) => [x]),
     });
     const table = new Table({
       rows: [
@@ -149,15 +149,15 @@ export class NondeterministicFiniteAutomachine<S extends State = State, I extend
   toString() {
     const inputs = this.inputSet.vs().sort((a, b) => (a.name < b.name ? -1 : 0));
     const transformTable = new Table({
-      rows: this.transforms.ks().map((state) => {
+      rows: flattern(this.transforms.ks().map((state) => {
         const transform = this.transforms.get(state);
-        return flattern(transform!.ks().map((input) => {
+        return transform!.ks().map((input) => {
           const next = transform!.get(input);
           return next!.vs().map((result) => {
             return `${state.name} + ${input.name} -> ${result.name}`;
           });
-        }));
-      }),
+        });
+      })).map((x) => [x]),
     });
     const table = new Table({
       rows: [

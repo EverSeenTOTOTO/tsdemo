@@ -1,4 +1,6 @@
-import { ExtendMap, ExtendSet, flattern } from '@/utils';
+import {
+  ExtendArray, ExtendMap, ExtendSet, flattern,
+} from '@/utils';
 
 describe('test utils', () => {
   test('test ExtendMap', () => {
@@ -54,5 +56,25 @@ describe('test utils', () => {
     expect(flattern([])).toEqual([]);
     expect(flattern([[]])).toEqual([]);
     expect(flattern([[1, 2], [3, 4]])).toEqual([1, 2, 3, 4]);
+  });
+
+  test('test ExtendArray', () => {
+    const l1: ExtendArray<number> = [1, 2];
+    const l2: ExtendArray<number> = [1, 2, 3];
+
+    expect(ExtendArray.isSame(l1, l2)).toBe(false);
+
+    l2.splice(2, 1);
+
+    expect(ExtendArray.isSame(l1, l2)).toBe(true);
+
+    l2.splice(1, 1);
+
+    expect(ExtendArray.isSame(l1, l2)).toBe(false);
+
+    l1.splice(0, l1.length);
+
+    expect(ExtendArray.isSame(l1, l2)).toBe(false);
+    expect(ExtendArray.isSame(l1, [])).toBe(true);
   });
 });
