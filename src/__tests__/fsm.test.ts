@@ -4,10 +4,10 @@ import {
   StateSet,
   DFATransform,
   NFATransform,
-  DeterministicFinitAutomachine,
-  NondeterministicFiniteAutomachine,
   DFATransformTable,
   NFATransformTable,
+  DeterministicFinitAutomachine,
+  NondeterministicFiniteAutomachine,
 } from '@/FiniteStateMachine';
 import { accept } from '@/Transform';
 
