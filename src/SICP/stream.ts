@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /* SICP 3.5 */
 
-const memo = <T>(f: () => T) => {
+export const memo = <T>(f: () => T) => {
   let called = false;
   let result: T;
   return () => {
@@ -14,13 +14,12 @@ const memo = <T>(f: () => T) => {
     return result;
   };
 };
-const force = <T>(f: () => T) => f();
 
 export type Stream<T> = [T, () => Stream<T>];
 
 export const stream_cons = <T>(x: T, g: () => Stream<T>): Stream<T> => [x, memo(g)];
 export const stream_car = <T>(s: Stream<T>) => s[0];
-export const stream_cdr = <T>(s: Stream<T>) => force(s[1]);
+export const stream_cdr = <T>(s: Stream<T>) => s[1]();
 
 export const stream_enumerate_interval = (start: number, step: number): Stream<number> => {
   return stream_cons(start, () => {

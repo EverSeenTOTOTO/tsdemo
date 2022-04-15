@@ -8,13 +8,13 @@ import {
   stream_cons,
   stream_join,
   stream_filter,
-  stream_enumerate_interval,
   stream_reduce,
-  stream_eular_transform,
-  stream_transform,
   stream_foreach,
+  stream_transform,
   stream_interleave,
-} from '../stream';
+  stream_eular_transform,
+  stream_enumerate_interval,
+} from '../SICP/stream';
 
 const stream_add = (s1: Stream<number>, s2: Stream<number>) => stream_join(s1, s2, (x, y) => x + y);
 const partial_sum = (s: Stream<number>): Stream<number> => {
