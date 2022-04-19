@@ -232,106 +232,126 @@
 // 7. 全局状态使用diff进行回退，局部状态自行提供回退策略
 // 8. 全局状态+结点构成process
 
-const call = <A, R>(f: R|((a?: A) => R)|((a?: A) => Promise<R>)) => (a?: A) => {
-  if (typeof f === 'function') {
-    if (toString.call(f) === '[object AsyncFunction]') {
-      return (f as (a?: A) => Promise<R>)(a);
-    }
-    return Promise.resolve((f as (a?: A) => R)(a));
-  }
-  return Promise.resolve(f);
-};
-
-type Fiber = any;
-
-class Stack<T> {
-  stack: T[] = [];
-
-  push(x: T) {
-    return this.stack.push(x);
-  }
-
-  pop() {
-    return this.stack.pop();
-  }
-
-  top() {
-    return this.stack[this.stack.length - 1];
-  }
-
-  clear() {
-    this.stack = [];
-  }
-}
-
-class Process {
-  current: Stack<Fiber> = new Stack();
-
-  pending: Stack<Fiber> = new Stack();
-
-  undos: Stack<Fiber> = new Stack();
-
-  async step() {
-    // swap
-    const temp = this.current;
-    this.current = this.pending;
-    this.pending = temp;
-
-    const undos = new Stack<Fiber>();
-    const tops = new Stack<Fiber>();
-
-    while (this.current.top()) {
-      const top = this.current.pop();
-      const { next, undo } = await call(top)();
-
-      tops.push(top);
-      if (next) this.pending.push(next);
-      if (undo) undos.push(undo);
-    }
-
-    this.undos.push(async () => {
-      this.pending.clear();
-      while (tops.top()) {
-        this.pending.push(tops.pop());
-      }
-
-      while (undos.top()) {
-        await call(undos.pop())?.();
-      }
-    });
-  }
-
-  back() {
-    return call(this.undos.pop())();
-  }
-
-  start(fiber: Fiber) {
-    this.pending.push(fiber);
-  }
-}
+// const call = <A, R>(f: R|((a?: A) => R)|((a?: A) => Promise<R>)) => (a?: A) => {
+//   if (typeof f === 'function') {
+//     if (toString.call(f) === '[object AsyncFunction]') {
+//       return (f as (a?: A) => Promise<R>)(a);
+//     }
+//     return Promise.resolve((f as (a?: A) => R)(a));
+//   }
+//   return Promise.resolve(f);
+// };
+//
+// type Fiber = any;
+//
+// class Stack<T> {
+//   stack: T[] = [];
+//
+//   push(x: T) {
+//     return this.stack.push(x);
+//   }
+//
+//   pop() {
+//     return this.stack.pop();
+//   }
+//
+//   top() {
+//     return this.stack[this.stack.length - 1];
+//   }
+//
+//   clear() {
+//     this.stack = [];
+//   }
+// }
+//
+// class Process {
+//   current: Stack<Fiber> = new Stack();
+//
+//   pending: Stack<Fiber> = new Stack();
+//
+//   undos: Stack<Fiber> = new Stack();
+//
+//   async step() {
+//     // swap
+//     const temp = this.current;
+//     this.current = this.pending;
+//     this.pending = temp;
+//
+//     const undos = new Stack<Fiber>();
+//     const tops = new Stack<Fiber>();
+//
+//     while (this.current.top()) {
+//       const top = this.current.pop();
+//       const { next, undo } = await call(top)();
+//
+//       tops.push(top);
+//       if (next) this.pending.push(next);
+//       if (undo) undos.push(undo);
+//     }
+//
+//     this.undos.push(async () => {
+//       this.pending.clear();
+//       while (tops.top()) {
+//         this.pending.push(tops.pop());
+//       }
+//
+//       while (undos.top()) {
+//         await call(undos.pop())?.();
+//       }
+//     });
+//   }
+//
+//   back() {
+//     return call(this.undos.pop())();
+//   }
+//
+//   start(fiber: Fiber) {
+//     this.pending.push(fiber);
+//   }
+// }
+//
+// (async function main() {
+//   const p = new Process();
+//
+//   let i = 0;
+//
+//   p.start(async function loop() {
+//     await new Promise((resolve) => setTimeout(resolve, 1000));
+//     console.log(i++);
+//     return {
+//       next: loop,
+//       undo() {
+//         i--;
+//       },
+//     };
+//   });
+//
+//   await p.step();
+//   await p.step();
+//   await p.back();
+//   await p.step();
+//   await p.step();
+//   await p.step();
+//   await p.back();
+//   await p.step();
+// }());
 
 (async function main() {
-  const p = new Process();
+  const foo = (x, callback) => {
+    if (x.length === 0) return callback([], []);
 
-  let i = 0;
+    return foo(x.slice(1), (arr, a2) => {
+      let next = x[0];
+      return callback([++next, ...arr], [arr, ...a2]);
+    });
+  };
 
-  p.start(async function loop() {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log(i++);
-    return {
-      next: loop,
-      undo() {
-        i--;
-      },
-    };
+  const x = [1, 2, 3];
+  const r = foo(x, (arr, a2) => {
+    console.log(a2);
+    return arr;
   });
 
-  await p.step();
-  await p.step();
-  await p.back();
-  await p.step();
-  await p.step();
-  await p.step();
-  await p.back();
-  await p.step();
+  console.log(x);
+  console.log(r);
 }());

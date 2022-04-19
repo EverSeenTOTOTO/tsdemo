@@ -33,20 +33,217 @@ export type Instruction = AssignInst
 
 export type InstructionNames = Instruction[0];
 
-type LabeledInstruction = [
-  symbol,
-  Instruction[],
-];
-
 type CompiledInstruction = [
   InstructionNames,
   Operation,
+];
+
+type LabelPosition = [
+  symbol,
+  number,
 ];
 
 export type Operation = (...args: any[]) => any;
 export type Operations = [string, Operation][];
 
 export type AssembleCode = (Instruction|symbol)[];
+
+const getLabel = (label: any) => {
+  return typeof label === 'symbol' ? label.description : label;
+};
+
+const lookupLabel = (labels: LabelPosition[], lbl: string, machine: Machine) => {
+  const lbls = labels.filter((label) => {
+    if (Array.isArray(label) && typeof label[0] === 'symbol') {
+      return label[0].description === lbl;
+    }
+
+    throw new Error(`Bad label ${lbl}`);
+  });
+
+  if (lbls.length > 1) {
+    throw new Error(`Ambiguous label ${lbl}`);
+  }
+
+  const [[, pos]] = lbls;
+
+  return machine.instructionSequence.slice(pos);
+};
+
+const makePrimitiveExp = (exp: PrimitiveInst, labels: LabelPosition[], machine: Machine) => {
+  const [type, input] = exp; // [<const|reg> <input>]
+
+  switch (type) {
+    case 'const':
+      return () => input;
+    case 'label':
+      return () => lookupLabel(labels, input, machine);
+    case 'reg':
+      return () => machine.getRegisterContent(input);
+    default:
+      throw new Error(`Unknown primitive ${getLabel(type)}`);
+  }
+};
+
+const makeOperationExp = (exp: [PrimitiveOp, ...PrimitiveInst[]], labels: LabelPosition[], machine: Machine) => {
+  const [[, op], ...input] = exp; // [op <op>] <input> ...
+
+  const operation = machine.getOperation(op);
+  const aprocs = input.map((arg: any) => makePrimitiveExp(arg, labels, machine));
+
+  return () => operation(...aprocs.map((f: () => any) => f()));
+};
+
+const makeAssign = (inst: AssignInst, labels: LabelPosition[], machine: Machine) => {
+  const [, name, ...valueExp] = inst;
+  const register = machine.getRegister(name);
+
+  const valueProc = valueExp[0][0] === 'op'
+    ? makeOperationExp(valueExp as [PrimitiveOp, ...PrimitiveInst[]], labels, machine) // assign <reg> [op <op>] <input> ...
+    : makePrimitiveExp(valueExp[0], labels, machine); // assign <reg> [<const|reg> <input>]
+
+  return () => {
+    register.set(valueProc());
+    machine.advancePC();
+  };
+};
+
+const makeTest = (inst: TestInst, labels: LabelPosition[], machine: Machine) => {
+  const [, ...condition] = inst;
+
+  if (condition[0][0] === 'op') { // test [<op> <input>] ...
+    const proc = makeOperationExp(condition, labels, machine);
+
+    return () => {
+      machine.setRegisterContent('flag', proc());
+      machine.advancePC();
+    };
+  }
+
+  throw new Error(`Bad test ${getLabel(condition[0])}`);
+};
+
+const makeBranch = (inst: BranchInst, labels: LabelPosition[], machine: Machine) => {
+  const [, [dest, lbl]] = inst;
+
+  if (dest === 'label') { // branch [label <lbl>]
+    return () => {
+      const insts = lookupLabel(labels, lbl, machine);
+
+      if (machine.getRegisterContent('flag')) {
+        machine.setRegisterContent('pc', insts);
+      } else {
+        machine.advancePC();
+      }
+    };
+  }
+
+  throw new Error(`Bad branch ${getLabel(dest)}`);
+};
+
+const makeGoto = (inst: GotoInst, labels: LabelPosition[], machine: Machine) => {
+  const [, [dest, lbl]] = inst;
+
+  if (dest === 'label') { // goto [label <lbl>]
+    return () => {
+      const insts = lookupLabel(labels, lbl, machine);
+
+      machine.setRegisterContent('pc', insts);
+    };
+  }
+
+  if (dest === 'reg') { // goto [reg <reg>]
+    return () => {
+      const reg = machine.getRegister(lbl);
+
+      machine.setRegisterContent('pc', reg.get());
+    };
+  }
+
+  throw new Error(`Bad goto ${getLabel(dest)}`);
+};
+
+const makeSave = (inst: SaveInst, _labels: LabelPosition[], machine: Machine) => {
+  const [,reg] = inst;
+
+  if (typeof reg === 'string') { // save <reg>
+    return () => {
+      const content = machine.getRegisterContent(reg);
+
+      machine.pushStack(content);
+      machine.advancePC();
+    };
+  }
+
+  throw new Error(`Bad save ${getLabel(reg)}`);
+};
+
+const makeRestore = (inst: RestoreInst, _labels: LabelPosition[], machine: Machine) => {
+  const [,reg] = inst;
+
+  if (typeof reg === 'string') { // restore <reg>
+    return () => {
+      const content = machine.popStack();
+
+      machine.setRegisterContent(reg, content);
+      machine.advancePC();
+    };
+  }
+
+  throw new Error(`Bad restore ${getLabel(reg)}`);
+};
+
+const makePerform = (inst: PerformInst, labels: LabelPosition[], machine: Machine) => {
+  const [, [op, oprand], ...input] = inst; // perform [op <op>] <input> ...
+
+  if (op === 'op') {
+    const operation = machine.getOperation(oprand);
+    const aprocs = input.map((arg: any) => makePrimitiveExp(arg, labels, machine));
+
+    return () => {
+      operation(...aprocs.map((f: () => any) => f()));
+      machine.advancePC();
+    };
+  }
+
+  throw new Error(`Bad perform ${getLabel(op)}`);
+};
+
+const makeExecutionProcedure = (inst: Instruction, labels: LabelPosition[], machine: Machine) => {
+  switch (inst[0]) {
+    case 'assign':
+      return makeAssign(inst, labels, machine);
+    case 'test':
+      return makeTest(inst, labels, machine);
+    case 'branch':
+      return makeBranch(inst, labels, machine);
+    case 'goto':
+      return makeGoto(inst, labels, machine);
+    case 'save':
+      return makeSave(inst, labels, machine);
+    case 'restore':
+      return makeRestore(inst, labels, machine);
+    case 'perform':
+      return makePerform(inst, labels, machine);
+    default:
+      throw new Error(`Unknown instruction ${getLabel(inst[0])}`);
+  }
+};
+
+const assemble = (code: AssembleCode, machine: Machine) => {
+  const labels: LabelPosition[] = [];
+  const compiledInsts: CompiledInstruction[] = [];
+
+  for (const inst of code) {
+    if (typeof inst === 'symbol') {
+      labels.push([inst, code.indexOf(inst) - labels.length]); // 记录label在指令中的位置，但是要减去已经出现的label数量，因为编译后的指令序列不含label
+    } else {
+      compiledInsts.push([inst[0], makeExecutionProcedure(inst, labels, machine)]);
+    }
+  }
+
+  return compiledInsts;
+};
 
 export class Register<T> {
   name: string;
@@ -65,221 +262,6 @@ export class Register<T> {
     this.value = value;
   }
 }
-
-const displayLabel = (label: any) => {
-  return typeof label === 'symbol' ? label.description : label;
-};
-
-const lookupLabel = (labels: LabeledInstruction[], lbl: string) => {
-  const lbls = labels.filter((label) => {
-    if (Array.isArray(label) && typeof label[0] === 'symbol') {
-      return label[0].description === lbl;
-    }
-
-    throw new Error(`Unknown label ${lbl}`);
-  });
-
-  if (lbls.length > 1) {
-    throw new Error(`Ambiguous labels ${lbl}`);
-  }
-
-  const [[, insts]] = lbls as [[symbol, Instruction[]]];
-
-  return insts;
-};
-
-const makePrimitiveExp = (exp: PrimitiveInst, labels: LabeledInstruction[], machine: Machine) => {
-  const [type, input] = exp; // [<const|reg> <input>]
-
-  switch (type) {
-    case 'const':
-      return () => input;
-    case 'label':
-      return () => lookupLabel(labels, input);
-    case 'reg':
-      return () => machine.getRegisterContent(input);
-    default:
-      throw new Error(`Unknown primitive ${displayLabel(type)}`);
-  }
-};
-
-const makeOperationExp = (exp: [PrimitiveOp, ...PrimitiveInst[]], labels: LabeledInstruction[], machine: Machine) => {
-  const [[, op], ...input] = exp; // [op <op>] <input> ...
-
-  const operation = machine.getOperation(op);
-  const aprocs = input.map((arg: any) => makePrimitiveExp(arg, labels, machine));
-
-  return () => operation(...aprocs.map((f: () => any) => f()));
-};
-
-const makeAssign = (inst: AssignInst, labels: LabeledInstruction[], machine: Machine) => {
-  const [, name, ...valueExp] = inst;
-  const register = machine.getRegister(name);
-
-  const valueProc = valueExp[0][0] === 'op'
-    ? makeOperationExp(valueExp as [PrimitiveOp, ...PrimitiveInst[]], labels, machine) // assign <reg> [op <op>] <input> ...
-    : makePrimitiveExp(valueExp[0], labels, machine); // assign <reg> [<const|reg> <input>]
-
-  return () => {
-    register.set(valueProc());
-    machine.advancePC();
-  };
-};
-
-const makeTest = (inst: TestInst, labels: LabeledInstruction[], machine: Machine) => {
-  const [, ...condition] = inst;
-
-  if (condition[0][0] === 'op') { // test [<op> <input>] ...
-    const proc = makeOperationExp(condition, labels, machine);
-
-    return () => {
-      machine.setRegisterContent('flag', proc());
-      machine.advancePC();
-    };
-  }
-
-  throw new Error(`Bad test ${displayLabel(condition[0])}`);
-};
-
-const makeBranch = (inst: BranchInst, labels: LabeledInstruction[], machine: Machine) => {
-  const [, [dest, lbl]] = inst;
-
-  if (dest === 'label') { // branch [label <lbl>]
-    return () => {
-      const insts = lookupLabel(labels, lbl);
-
-      if (machine.getRegisterContent('flag')) {
-        machine.setRegisterContent('pc', insts);
-      } else {
-        machine.advancePC();
-      }
-    };
-  }
-
-  throw new Error(`Bad branch ${displayLabel(dest)}`);
-};
-
-const makeGoto = (inst: GotoInst, labels: LabeledInstruction[], machine: Machine) => {
-  const [, [dest, lbl]] = inst;
-
-  if (dest === 'label') { // goto [label <lbl>]
-    return () => {
-      const insts = lookupLabel(labels, lbl);
-
-      machine.setRegisterContent('pc', insts);
-    };
-  }
-
-  if (dest === 'reg') { // goto [reg <reg>]
-    return () => {
-      const reg = machine.getRegister(lbl);
-
-      machine.setRegisterContent('pc', reg.get());
-    };
-  }
-
-  throw new Error(`Bad goto ${displayLabel(dest)}`);
-};
-
-const makeSave = (inst: SaveInst, _labels: LabeledInstruction[], machine: Machine) => {
-  const [,reg] = inst;
-
-  if (typeof reg === 'string') { // save <reg>
-    return () => {
-      const content = machine.getRegisterContent(reg);
-
-      machine.pushStack(content);
-      machine.advancePC();
-    };
-  }
-
-  throw new Error(`Bad save ${displayLabel(reg)}`);
-};
-
-const makeRestore = (inst: RestoreInst, _labels: LabeledInstruction[], machine: Machine) => {
-  const [,reg] = inst;
-
-  if (typeof reg === 'string') { // restore <reg>
-    return () => {
-      const content = machine.popStack();
-
-      machine.setRegisterContent(reg, content);
-      machine.advancePC();
-    };
-  }
-
-  throw new Error(`Bad restore ${displayLabel(reg)}`);
-};
-
-const makePerform = (inst: PerformInst, labels: LabeledInstruction[], machine: Machine) => {
-  const [, [op, oprand], ...input] = inst; // perform [op <op>] <input> ...
-
-  if (op === 'op') {
-    const operation = machine.getOperation(oprand);
-    const aprocs = input.map((arg: any) => makePrimitiveExp(arg, labels, machine));
-
-    return () => {
-      operation(...aprocs.map((f: () => any) => f()));
-      machine.advancePC();
-    };
-  }
-
-  throw new Error(`Bad perform ${displayLabel(op)}`);
-};
-
-const makeExecutionProcedure = (inst: Instruction, labels: LabeledInstruction[], machine: Machine) => {
-  switch (inst[0]) {
-    case 'assign':
-      return makeAssign(inst, labels, machine);
-    case 'test':
-      return makeTest(inst, labels, machine);
-    case 'branch':
-      return makeBranch(inst, labels, machine);
-    case 'goto':
-      return makeGoto(inst, labels, machine);
-    case 'save':
-      return makeSave(inst, labels, machine);
-    case 'restore':
-      return makeRestore(inst, labels, machine);
-    case 'perform':
-      return makePerform(inst, labels, machine);
-    default:
-      throw new Error(`Unknown instruction ${displayLabel(inst[0])}`);
-  }
-};
-
-const updateInsts = (insts: Instruction[], labels: LabeledInstruction[], machine: Machine) => {
-  for (const inst of insts) {
-    // [inst, ...] -> [inst, callback]
-    // compiledInsts.push([inst[0], makeExecutionProcedure(inst, labels, machine)]);
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    inst.splice(1, inst.length, makeExecutionProcedure(inst, labels, machine));
-  }
-
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  return insts as CompiledInstruction[];
-};
-
-type ExtractLabelsContinuation = (insts: Instruction[], labels: LabeledInstruction[]) => CompiledInstruction[];
-
-// ugly and beauty
-const extractLabels = (code: AssembleCode, receive: ExtractLabelsContinuation): CompiledInstruction[] => {
-  if (code.length === 0) return receive([], []);
-
-  return extractLabels(code.slice(1), (insts, labels) => {
-    const nextInst = code[0];
-    if (typeof nextInst === 'symbol') {
-      return receive(insts, [[nextInst, insts], ...labels]);
-    }
-    return receive([nextInst, ...insts], labels);
-  });
-};
-
-const assemble = (code: AssembleCode, machine: Machine) => {
-  return extractLabels(code, (insts, labels) => updateInsts(insts, labels, machine));
-};
 
 export class Machine {
   flag: Register<boolean>;

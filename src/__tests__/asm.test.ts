@@ -11,14 +11,8 @@ describe('test machine', () => {
     const machine = new Machine(
       ['a', 'b'],
       [
-        [
-          '+',
-          (x: number, y: number) => x + y,
-        ],
-        [
-          'display',
-          display,
-        ],
+        ['+', (x: number, y: number) => x + y],
+        ['display', display],
       ],
       [
         ['assign', 'a', ['const', 1]],
