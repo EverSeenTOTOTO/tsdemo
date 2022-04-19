@@ -58,7 +58,10 @@ export default [
     ],
     watch: {
       buildDelay: 1000,
-      include: 'src/web/**',
+      include: [
+        'src/web/**',
+        'public/**',
+      ],
     },
     ...opts,
   },

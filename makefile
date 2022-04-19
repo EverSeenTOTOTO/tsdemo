@@ -17,7 +17,7 @@ build: clean
 	npx rollup -c rollup.config.js
 
 web:
-	google-chrome ${PUBLIC}/index.html
+	cp public/index.html dist/web/
 	npx rollup -wc rollup.config.js
 
 start: build

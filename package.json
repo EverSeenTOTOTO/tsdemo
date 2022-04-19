@@ -4,6 +4,8 @@
   "types": "dist/index.d.ts",
   "dependencies": {
     "cli-table": "^0.3.11",
+    "cors": "^2.8.5",
+    "express": "^4.17.3",
     "puppeteer-core": "^13.4.1",
     "reflect-metadata": "^0.1.13"
   },
