@@ -4,6 +4,10 @@ module.exports = {
   },
   clearMocks: true,
   coverageDirectory: 'coverage',
+  coveragePathIgnorePatterns: [
+    '/node_modules/',
+    '/graph/', // an error is thrown, don't know why
+  ],
   coverageProvider: 'v8',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',

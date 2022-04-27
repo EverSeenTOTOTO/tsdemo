@@ -81,6 +81,22 @@ export class ExtendSet<T> extends Set<T> {
 }
 
 export class ExtendArray<T> extends Array<T> {
+  top() {
+    return this[this.length - 1];
+  }
+
+  bottom() {
+    return this[0];
+  }
+
+  head() {
+    return this.bottom();
+  }
+
+  tail() {
+    return this.top();
+  }
+
   static isSame<P>(a: ExtendArray<P>, b: ExtendArray<P>) {
     if (a.length !== b.length) return false;
 
@@ -106,4 +122,21 @@ export const flattern = (arr: any[]): any[] => {
     ...prev,
     ...Array.isArray(curr) ? flattern(curr) : [curr],
   ], []);
+};
+
+export type Callback = (...args: any[]) => any;
+
+export type MaybeAsync<T, Param> = T extends (param: Param) => infer P
+  ? T extends (param: Param) => Promise<infer Q>
+    ? (param: Param) => Promise<Q>
+    : (param: Param) => P
+  : T;
+
+export const call = async <T, Param>(fn: MaybeAsync<T, Param>, param: Param) => {
+  // eslint-disable-next-line no-nested-ternary
+  return typeof fn === 'function'
+    ? fn.constructor.name === 'AsyncFunction'
+      ? fn(param)
+      : Promise.resolve(fn(param))
+    : Promise.resolve(fn);
 };
