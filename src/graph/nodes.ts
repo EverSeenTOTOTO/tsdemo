@@ -82,7 +82,7 @@ export class SteppedPipeNode<I, O> extends PipeNode<I, O> {
       const connections = ctx.getConnectionsByFrom(output);
 
       connections.forEach((c) => {
-        ctx.executor.pending.push(() => {
+        ctx.executor.submit(() => {
           c.to.node.emit(c.to.name, value, ctx);
         });
       });

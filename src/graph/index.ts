@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable class-methods-use-this */
 /* eslint-disable max-classes-per-file */
 import {
@@ -136,13 +135,30 @@ export class Context implements IContext {
     return ctx;
   }
 
+  protected checkMaxConnection<S>(slot: ISlot<S>) {
+    if (slot.maxConnection) {
+      const tos = this.getConnectionsByFrom(slot);
+
+      if (tos.length >= slot.maxConnection) {
+        throw new Error(`Slot ${slot.name} has reached max connection`);
+      }
+    }
+  }
+
   connect<S1, S2, V>(from: INode<S1, any, V>, fromSlot: S1, to: INode<S2, V, any>, toSlot: S2): IConnection<S1, S2> {
     const fromS = from.getSlot(fromSlot);
     const toS = to.getSlot(toSlot);
 
-    if (!fromS || !toS) {
-      throw new Error(`Slot ${fromSlot} or ${toSlot} not found`);
+    if (!fromS) {
+      throw new Error(`${from.name} has no slot ${fromSlot}`);
     }
+
+    if (!toS) {
+      throw new Error(`${to.name} has no slot ${toSlot}`);
+    }
+
+    this.checkMaxConnection(fromS);
+    this.checkMaxConnection(toS);
 
     const connection = new Connection(fromS, toS);
     this.connections.push(connection);

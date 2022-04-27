@@ -6,14 +6,14 @@ class DemoExecutor extends Executor {
   array: number[] = [];
 
   sync(i: number) {
-    this.pending.push(() => {
+    this.submit(() => {
       this.array.push(i);
       return () => this.array.pop();
     });
   }
 
   async(i: number) {
-    this.pending.push(async () => {
+    this.submit(async () => {
       this.array.push(i);
       await new Promise((resolve) => setTimeout(resolve, 0));
       return () => this.array.pop();
@@ -21,7 +21,7 @@ class DemoExecutor extends Executor {
   }
 
   loop(i: number) {
-    this.pending.push(() => {
+    this.submit(() => {
       this.array.push(i);
       this.loop(i + 1);
       return () => this.array.pop();
@@ -44,29 +44,23 @@ describe('test graph', () => {
 
     await node.step();
     expect(node.array).toEqual([1]);
-    expect(node.undos.length).toBe(1);
     await node.step();
     await node.step();
     expect(node.array).toEqual([1, 2, 3]);
-    expect(node.undos.length).toBe(3);
 
     // no effect
     await node.step();
     expect(node.array).toEqual([1, 2, 3]);
-    expect(node.undos.length).toBe(3);
 
     await node.back();
     expect(node.array).toEqual([1, 2]);
-    expect(node.undos.length).toBe(2);
     await node.back();
     await node.back();
     expect(node.array).toEqual([]);
-    expect(node.undos.length).toBe(0);
 
     // no effect
     await node.back();
     expect(node.array).toEqual([]);
-    expect(node.undos.length).toBe(0);
   });
 
   it('test next and prev', async () => {
@@ -78,21 +72,17 @@ describe('test graph', () => {
 
     await node.next();
     expect(node.array).toEqual([1, 2, 3]);
-    expect(node.undos.length).toBe(3);
 
     // no effect
     await node.next();
     expect(node.array).toEqual([1, 2, 3]);
-    expect(node.undos.length).toBe(3);
 
     await node.prev();
     expect(node.array).toEqual([]);
-    expect(node.undos.length).toBe(0);
 
     // no effect
     await node.prev();
     expect(node.array).toEqual([]);
-    expect(node.undos.length).toBe(0);
   });
 
   it('test mixed', async () => {
@@ -105,12 +95,10 @@ describe('test graph', () => {
     await node.step();
     await node.next();
     expect(node.array).toEqual([1, 2, 3]);
-    expect(node.undos.length).toBe(3);
 
     await node.back();
     await node.prev();
     expect(node.array).toEqual([]);
-    expect(node.undos.length).toBe(0);
   });
 
   it('test mixed2', async () => {
@@ -123,12 +111,9 @@ describe('test graph', () => {
     node.sync(3);
     await node.back();
     expect(node.array).toEqual([1]);
-    expect(node.undos.length).toBe(1);
-    expect(node.pending.length).toBe(2);
 
     await node.next();
     expect(node.array).toEqual([1, 2, 3]);
-    expect(node.undos.length).toBe(3);
 
     await node.back();
     node.sync(4);
@@ -137,7 +122,6 @@ describe('test graph', () => {
     await node.back();
     await node.step();
     expect(node.array).toEqual([1, 2, 3, 4]);
-    expect(node.undos.length).toBe(4);
   });
 
   it('test loop', async () => {
@@ -146,14 +130,12 @@ describe('test graph', () => {
     node.loop(0);
 
     for (let i = 0; i < 1000; ++i) {
-      // eslint-disable-next-line no-await-in-loop
       await node.step();
     }
 
     expect(node.array.length).toBe(1000);
 
     for (let i = 0; i < 999; ++i) {
-      // eslint-disable-next-line no-await-in-loop
       await node.back();
     }
 

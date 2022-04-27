@@ -2,9 +2,9 @@ import { call, Callback, ExtendArray as Queue } from '@/utils';
 import { IExecutor, IContext } from './types';
 
 export class Executor implements IExecutor {
-  public pending: Queue<Callback> = new Queue();
+  private pending: Queue<Callback> = new Queue();
 
-  public undos: Queue<Callback> = new Queue();
+  private undos: Queue<Callback> = new Queue();
 
   clone(): Executor {
     const executor = new Executor();
@@ -13,6 +13,10 @@ export class Executor implements IExecutor {
     executor.undos = new Queue(...this.undos);
 
     return executor;
+  }
+
+  submit(callback: Callback): void {
+    this.pending.push(callback);
   }
 
   reset() {
@@ -57,7 +61,6 @@ export class Executor implements IExecutor {
     while (current.head()) {
       const first = current.shift();
       if (first) {
-        // eslint-disable-next-line no-await-in-loop
         await this.exec(first, ctx);
       }
     }
@@ -66,7 +69,6 @@ export class Executor implements IExecutor {
   // 执行直到undos为空
   async prev(ctx?: IContext): Promise<void> {
     while (this.undos.top()) {
-      // eslint-disable-next-line no-await-in-loop
       await this.back(ctx);
     }
   }

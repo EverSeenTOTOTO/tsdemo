@@ -13,7 +13,6 @@ export class ExtendMap<K, V> extends Map<K, V> {
     return [...this.keys()];
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static None = new ExtendMap<any, any>();
 }
 
@@ -49,14 +48,12 @@ export class ExtendSet<T> extends Set<T> {
   addMultiple(items: ExtendSet<T>): void;
   addMultiple(items: T[]): void;
   addMultiple(...items: T[]): void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   addMultiple(items: any): void {
     for (const item of items) {
       this.add(item);
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static None: ExtendSet<any> = new ExtendSet();
 
   static isSame<P>(a: ExtendSet<P>, b: ExtendSet<P>) {
@@ -126,13 +123,7 @@ export const flattern = (arr: any[]): any[] => {
 
 export type Callback = (...args: any[]) => any;
 
-export type MaybeAsync<T, Param> = T extends (param: Param) => infer P
-  ? T extends (param: Param) => Promise<infer Q>
-    ? (param: Param) => Promise<Q>
-    : (param: Param) => P
-  : T;
-
-export const call = async <T, Param>(fn: MaybeAsync<T, Param>, param: Param) => {
+export const call = async <T, Param>(fn: T, param: Param) => {
   // eslint-disable-next-line no-nested-ternary
   return typeof fn === 'function'
     ? fn.constructor.name === 'AsyncFunction'

@@ -25,8 +25,10 @@ module.exports = {
     'no-plusplus': 'off',
     'max-len': 'off',
     'arrow-body-style': 'off',
+    'no-await-in-loop': 'off',
     'no-restricted-syntax': 'off',
     'import/prefer-default-export': 'off',
+    '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
   },
   overrides: [

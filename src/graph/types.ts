@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { Callback, ExtendArray as Queue } from '@/utils';
+import { Callback } from '@/utils';
 
 export interface ISlot<S> {
   name: S;
@@ -32,10 +31,9 @@ export interface IConnection<S1, S2> {
 }
 
 export interface IExecutor {
-  pending: Queue<Callback>;
-  undos: Queue<Callback>;
-
   clone(): IExecutor;
+
+  submit(cb: Callback): void;
 
   reset(): void;
   step(ctx?: IContext): Promise<void>;
