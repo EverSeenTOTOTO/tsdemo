@@ -1,4 +1,4 @@
-import App from './App.svelte';
+import App from './canvas.svelte';
 
 // eslint-disable-next-line no-new
 new App({

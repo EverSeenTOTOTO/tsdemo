@@ -17,7 +17,9 @@ const opts = {
         { find: '@test', replacement: path.resolve(__dirname, 'src/__tests__') },
       ],
     }),
-    svelte(),
+    svelte({
+      emitCss: false,
+    }),
     resolve({
       extensions,
     }),
@@ -35,7 +37,7 @@ const opts = {
 
 export default [
   {
-    external: ['svelte', 'puppeteer-core'],
+    external: ['puppeteer-core'],
     input: path.resolve(__dirname, 'src/index.ts'),
     output: [
       {

@@ -57,3 +57,12 @@ new Promise(res => {
 </script>
 
 <h1 class="title">Keep Learning</h1>
+
+<style>
+.title {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%)
+}
+</style>

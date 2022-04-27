@@ -17,7 +17,7 @@ build: clean
 	npx rollup -c rollup.config.js
 
 web:
-	cp public/index.html dist/web/
+	cp public/index.html ${DIST}/web/
 	npx rollup -wc rollup.config.js
 
 start: build
