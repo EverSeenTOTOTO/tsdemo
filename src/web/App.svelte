@@ -1,68 +1,109 @@
 <script>
-const workerScript = (name) => `
-onmessage = function(e) {
-  const buffer = e.data;
-  const view = new BigUint64Array(buffer);
+import * as THREE from  'three';
+import { onMount } from 'svelte';
+import Cube from './cube.svelte';
 
- postMessage('${name}: thread start');
-  for(let i=0; i<10000; ++i) {
-    // view[0] ++;
-    Atomics.add(view, 0, 1n);
-  }
- postMessage('${name}: thread done');
-}
-`;
+// canvas
+let canvas = {
+  el: null,
+  width: window.innerWidth * 0.9,
+  height: window.innerHeight * 0.9,
+};
 
-const blob2DataUrl = (blob) => new Promise((resolve, reject) => {
-  const reader = new FileReader();
-  reader.onload = (e) => resolve(e.target?.result);
-  reader.onerror = (e) => reject(e);
-  reader.readAsDataURL(blob);
+window.addEventListener("optimizedResize", () => {
+  canvas.width = window.innerWidth * 0.9,
+  canvas.height = window.innerHeight * 0.9;
 });
 
-const buffer = new SharedArrayBuffer(8);
-const view = new BigUint64Array(buffer);
-
-view[0] = 0n;
-
-const worker1 = new Worker(URL.createObjectURL(new Blob([workerScript(1)])));
-const worker2 = new Worker(`data:application/javascript,${encodeURIComponent(workerScript(2))}`);
-const worker3p = blob2DataUrl(new Blob([workerScript(3)])).then(dataUrl => new Worker(dataUrl));
- 
-let done = 0;
-const onmessage = (e) => {
-  console.log(e.data);
-  if(/done/.test(e.data)) {
-    done++;
-  }
+// camera
+let cameraSetting = {
+  fov: 75,
+  aspect: window.innerWidth / window.innerHeight,
+  near: 0.1,
+  far: 10,
+  position: {
+    x: 0,
+    y: 0,
+    z: 2
+  },
 }
-worker1.onmessage = onmessage;
-worker2.onmessage = onmessage;
+let camera = new THREE.PerspectiveCamera(
+  cameraSetting.fov,
+  cameraSetting.aspect,
+  cameraSetting.near,
+  cameraSetting.far
+);
+camera.position.set(
+  cameraSetting.position.x, 
+  cameraSetting.position.y, 
+  cameraSetting.position.z
+);
 
-worker1.postMessage(buffer);
-worker2.postMessage(buffer);
-worker3p.then(worker3 => {
-  worker3.onmessage = onmessage;
-  worker3.postMessage(buffer);
+function resizeRendererToDisplaySize(renderer) {
+  const c = renderer.domElement;
+  const width = c.clientWidth;
+  const height = c.clientHeight;
+  const needResize = c.width !== width || c.height !== height;
+  if (needResize) {
+    renderer.setSize(width, height, false);
+  }
+  return needResize;
+}
+
+// light
+let lightSetting = {
+  color: 0x00ffff,
+  intensity: 1.2,
+  position: {
+    x: 0,
+    y: 0,
+    z: 2
+  },
+};
+let light = new THREE.DirectionalLight(
+  lightSetting.color,
+  lightSetting.intensity,
+);
+light.position.set(
+  lightSetting.position.x,
+  lightSetting.position.y,
+  lightSetting.position.z
+);
+
+let renderer;
+const scene = new THREE.Scene();
+
+scene.add(light);
+
+const render = () => {
+  if(resizeRendererToDisplaySize(renderer)) {
+    const c = renderer.domElement;
+    camera.aspect = c.clientWidth / c.clientHeight;
+    camera.updateProjectionMatrix();
+  }
+
+  renderer.render(scene, camera);
+}
+
+onMount(() => {
+  renderer = new THREE.WebGLRenderer({
+    canvas: canvas.el,
+  });
 });
-
-new Promise(res => {
-    const interval = setInterval(() => {
-        if(done >= 3) {
-            clearInterval(interval);
-            res();
-        }
-    }, 1000)
-  }).then(() => console.log(view[0]))
 </script>
 
-<h1 class="title">Keep Learning</h1>
+<Cube {scene} {render} {renderer} />
+<canvas 
+  class="canvas"
+  width={canvas.width}
+  height={canvas.height}
+  bind:this={canvas.el}
+>
+</canvas>
 
 <style>
-.title {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%)
+.canvas {
+  margin: 10px;
 }
 </style>
+
