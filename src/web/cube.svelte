@@ -3,9 +3,6 @@ import * as THREE from 'three';
 
 export let scene;
 export let render;
-export let renderer;
-
-$: renderer && reset();
 
 const boxWidth = 1;
 const boxHeight = 1;
@@ -17,8 +14,8 @@ const cube = new THREE.Mesh(geometry, material);
 scene.add(cube);
 
 const update = () => {
-  cube.rotation.x += 0.02;
-  cube.rotation.y += 0.02;
+  cube.rotation.x += 0.04;
+  cube.rotation.y += 0.04;
 }
 
 function* loopGen() {
@@ -29,12 +26,12 @@ function* loopGen() {
 }
 const loop = loopGen();
 
-const frameCost = 1000 / 60;
+const frameCost = 1000 / 75;
 let lastTimestamp; 
 let rAF;
 
 const wrap = (run) => () => {
-  lastTimestamp = performance.now();
+  lastTimestamp = 0;
 
   rAF = requestAnimationFrame(run);
 }
@@ -43,19 +40,25 @@ const step = () => {
   loop.next();
   rAF = requestAnimationFrame(render);
 }
-const run = () => {
+const run = (time) => {
+  const elapsed = time - lastTimestamp;
+
+  console.log(elapsed);
+
+  lastTimestamp = time;
   loop.next();
   render();
   rAF = requestAnimationFrame(run);
 }
 
-const limitFPS = () => {
-  const now = performance.now();
-  const elapsed = now - lastTimestamp;
+const limitFPS = (time) => {
+  const elapsed = time - lastTimestamp;
+
+  console.log(elapsed);
 
   // 已经度过了一帧时间
   if (elapsed >= frameCost) {
-    lastTimestamp = now;
+    lastTimestamp = time;
     loop.next();
     render();
   }
@@ -63,12 +66,13 @@ const limitFPS = () => {
   rAF = requestAnimationFrame(limitFPS);
 };
 
-const catchUp = () => {
-  const now = performance.now();
-  let elapsed = now - lastTimestamp;
+const catchUp = (time) => {
+  let elapsed = time - lastTimestamp;
+
+  console.log(elapsed);
 
   if (elapsed >= frameCost) {
-    lastTimestamp = now;
+    lastTimestamp = time;
     while (elapsed > frameCost) {
       loop.next();
       elapsed -= frameCost;
@@ -87,12 +91,13 @@ const reset = () => {
   cube.rotation.x = Math.PI / 8;
   cube.rotation.y = Math.PI / 3;
   render();
+  console.clear();
 }
 </script>
 
 <div class="control">
   <button on:click={step}>step</button>
-  <button on:click={run}>run</button>
+  <button on:click={wrap(run)}>run</button>
   <button on:click={wrap(limitFPS)}>limitFPS</button>
   <button on:click={wrap(catchUp)}>catchUp</button>
   <button on:click={stop}>stop</button>

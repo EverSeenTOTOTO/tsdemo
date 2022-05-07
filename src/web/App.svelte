@@ -1,7 +1,24 @@
 <script>
 import * as THREE from  'three';
+import GUI from 'lil-gui';
+import Stats from 'stats.js';
 import { onMount } from 'svelte';
-import Cube from './cube.svelte';
+import Demo from './cube.svelte';
+
+// FPS stats
+const stats = new Stats();
+const sds = stats.domElement.style;
+
+sds.position = 'absolute'
+sds.left = ''
+sds.top = ''
+sds.right = '0px'
+sds.bottom = '0px'
+sds.margin = '2rem 6rem'
+stats.showPanel(0);
+document.body.appendChild(stats.domElement);
+
+const gui = new GUI();
 
 // canvas
 let canvas = {
@@ -76,6 +93,7 @@ const scene = new THREE.Scene();
 scene.add(light);
 
 const render = () => {
+  if (!renderer) return;
   if(resizeRendererToDisplaySize(renderer)) {
     const c = renderer.domElement;
     camera.aspect = c.clientWidth / c.clientHeight;
@@ -83,16 +101,18 @@ const render = () => {
   }
 
   renderer.render(scene, camera);
+  stats.update();
 }
 
 onMount(() => {
   renderer = new THREE.WebGLRenderer({
     canvas: canvas.el,
   });
+  render();
 });
 </script>
 
-<Cube {scene} {render} {renderer} />
+<Demo {scene} {render} />
 <canvas 
   class="canvas"
   width={canvas.width}
