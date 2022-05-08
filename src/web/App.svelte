@@ -50,11 +50,50 @@ let camera = new THREE.PerspectiveCamera(
   cameraSetting.near,
   cameraSetting.far
 );
-camera.position.set(
-  cameraSetting.position.x, 
-  cameraSetting.position.y, 
-  cameraSetting.position.z
-);
+
+$: {
+  camera.fov = cameraSetting.fov;
+  camera.aspect = cameraSetting.aspect;
+  camera.near = cameraSetting.near;
+  camera.far = cameraSetting.far;
+  camera.position.set(
+    cameraSetting.position.x, 
+    cameraSetting.position.y, 
+    cameraSetting.position.z
+  );
+  camera.updateProjectionMatrix();
+  render();
+}
+
+const cameraFolder = gui.addFolder("Camera");
+cameraFolder.add(cameraSetting, 'fov', 1, 180)
+    .onChange(() => {
+      cameraSetting.fov = cameraSetting.fov;
+    })
+cameraFolder.add(cameraSetting, 'aspect', 0.1, 10)
+    .onChange(() => {
+      cameraSetting.aspect = cameraSetting.aspect;
+    })
+cameraFolder.add(cameraSetting, 'near', 0.1, 10)
+    .onChange(() => {
+      cameraSetting.near = cameraSetting.near;
+    })
+cameraFolder.add(cameraSetting, 'far', 0.1, 10)
+    .onChange(() => {
+      cameraSetting.far = cameraSetting.far;
+    })
+cameraFolder.add(cameraSetting.position, 'x', -10, 10)
+    .onChange(() => {
+      cameraSetting.position.x = cameraSetting.position.x;
+    })
+cameraFolder.add(cameraSetting.position, 'y', -10, 10)
+    .onChange(() => {
+      cameraSetting.position.y = cameraSetting.position.y;
+    })
+cameraFolder.add(cameraSetting.position, 'z', -10, 10)
+    .onChange(() => {
+      cameraSetting.position.z = cameraSetting.position.z;
+    })
 
 function resizeRendererToDisplaySize(renderer) {
   const c = renderer.domElement;
@@ -81,11 +120,40 @@ let light = new THREE.DirectionalLight(
   lightSetting.color,
   lightSetting.intensity,
 );
-light.position.set(
-  lightSetting.position.x,
-  lightSetting.position.y,
-  lightSetting.position.z
-);
+
+$: {
+  light.color.set(lightSetting.color);
+  light.intensity = lightSetting.intensity;
+  light.position.set(
+    lightSetting.position.x,
+    lightSetting.position.y,
+    lightSetting.position.z
+  );
+  render();
+}
+
+const lightFolder = gui.addFolder("Light");
+lightFolder.addColor(lightSetting, 'color')
+  .onChange(() => {
+    lightSetting.color = lightSetting.color;
+  })
+lightFolder.add(lightSetting, 'intensity', 0, 2)
+  .onChange(() => {
+    lightSetting.intensity = lightSetting.intensity;
+  })
+lightFolder.add(lightSetting.position, 'x', -5, 5)
+  .onChange(() => {
+    lightSetting.position.x = lightSetting.position.x
+  })
+lightFolder.add(lightSetting.position, 'y', -5, 5)
+  .onChange(() => {
+    lightSetting.position.y = lightSetting.position.y
+  })
+lightFolder.add(lightSetting.position, 'z', -5, 5)
+  .onChange(() => {
+    lightSetting.position.z = lightSetting.position.z
+  })
+lightFolder.close();
 
 let renderer;
 const scene = new THREE.Scene();
@@ -112,7 +180,7 @@ onMount(() => {
 });
 </script>
 
-<Demo {scene} {render} />
+<Demo {gui} {scene} {render} />
 <canvas 
   class="canvas"
   width={canvas.width}

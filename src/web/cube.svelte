@@ -1,21 +1,62 @@
 <script>
 import * as THREE from 'three';
 
+export let gui;
 export let scene;
 export let render;
+
+const cubeProps = {
+  color: 0x1447cf,
+  rx: 0,
+  ry: 0,
+  rz: 0,
+  FPS: 60
+}
 
 const boxWidth = 1;
 const boxHeight = 1;
 const boxDepth = 1;
 const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
-const material = new THREE.MeshPhongMaterial({color: 0x44aa88}); 
+const material = new THREE.MeshPhongMaterial(cubeProps); 
 const cube = new THREE.Mesh(geometry, material);
+
+$: {
+  cube.material.color.set(cubeProps.color)
+  cube.rotation.x = cubeProps.rx;
+  cube.rotation.z = cubeProps.rz;
+  cube.rotation.y = cubeProps.ry;
+  rx.updateDisplay();
+  ry.updateDisplay();
+  rz.updateDisplay();
+  requestAnimationFrame(render)
+}
+
+
+const cubeFolder = gui.addFolder("Cube")
+cubeFolder.addColor(cubeProps, 'color')
+    .onChange((value) => {
+        // explicitly call set
+        cubeProps.color = cubeProps.color;
+    });
+
+const rx = cubeFolder.add(cubeProps, 'rx', 0, Math.PI * 2, 0.01)
+    .onChange(() => {
+        cubeProps.rx = cubeProps.rx;
+    })
+const ry = cubeFolder.add(cubeProps, 'ry', 0, Math.PI * 2, 0.01)
+    .onChange(() => {
+        cubeProps.ry = cubeProps.ry;
+    })
+const rz = cubeFolder.add(cubeProps, 'rz', 0, Math.PI * 2, 0.01)
+    .onChange(() => {
+        cubeProps.rz = cubeProps.rz;
+    })
 
 scene.add(cube);
 
 const update = () => {
-  cube.rotation.x += 0.04;
-  cube.rotation.y += 0.04;
+  cubeProps.rx += 0.04;
+  cubeProps.ry += 0.04;
 }
 
 function* loopGen() {
@@ -26,9 +67,16 @@ function* loopGen() {
 }
 const loop = loopGen();
 
-const frameCost = 1000 / 75;
+let frameCost = 1000 / cubeProps.FPS;
 let lastTimestamp; 
 let rAF;
+
+$: frameCost = 1000 / cubeProps.FPS;
+
+cubeFolder.add(cubeProps, 'FPS', 10, 100)
+    .onChange(() => {
+      cubeProps.FPS = cubeProps.FPS;
+    });
 
 const wrap = (run) => () => {
   lastTimestamp = 0;
@@ -43,7 +91,6 @@ const step = () => {
 const run = (time) => {
   const elapsed = time - lastTimestamp;
 
-  console.log(elapsed);
 
   lastTimestamp = time;
   loop.next();
@@ -54,7 +101,6 @@ const run = (time) => {
 const limitFPS = (time) => {
   const elapsed = time - lastTimestamp;
 
-  console.log(elapsed);
 
   // 已经度过了一帧时间
   if (elapsed >= frameCost) {
@@ -69,7 +115,6 @@ const limitFPS = (time) => {
 const catchUp = (time) => {
   let elapsed = time - lastTimestamp;
 
-  console.log(elapsed);
 
   if (elapsed >= frameCost) {
     lastTimestamp = time;
@@ -88,11 +133,13 @@ const stop = () => {
 }
 const reset = () => {
   cancelAnimationFrame(rAF);
-  cube.rotation.x = Math.PI / 8;
-  cube.rotation.y = Math.PI / 3;
   render();
-  console.clear();
+  cubeProps.rx = 0;
+  cubeProps.ry = 0;
+  cubeProps.rz = 0;
 }
+
+reset();
 </script>
 
 <div class="control">
