@@ -1,4 +1,6 @@
 <script>
+import { createEventDispatcher, onMount } from 'svelte';
+
 import * as THREE from 'three';
 
 export let gui;
@@ -17,7 +19,7 @@ const boxWidth = 1;
 const boxHeight = 1;
 const boxDepth = 1;
 const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
-const material = new THREE.MeshPhongMaterial(cubeProps); 
+  const material = new THREE.MeshPhongMaterial({ color: cubeProps.color }); 
 const cube = new THREE.Mesh(geometry, material);
 
 $: {
@@ -53,6 +55,9 @@ const rz = cubeFolder.add(cubeProps, 'rz', 0, Math.PI * 2, 0.01)
     })
 
 scene.add(cube);
+
+const dispatch = createEventDispatcher();
+onMount(() => dispatch('cube', { cube }))
 
 const update = () => {
   cubeProps.rx += 0.04;
@@ -94,23 +99,9 @@ const run = (time) => {
 
   lastTimestamp = time;
   loop.next();
-  render();
+  render(time);
   rAF = requestAnimationFrame(run);
 }
-
-const limitFPS = (time) => {
-  const elapsed = time - lastTimestamp;
-
-
-  // 已经度过了一帧时间
-  if (elapsed >= frameCost) {
-    lastTimestamp = time;
-    loop.next();
-    render();
-  }
-
-  rAF = requestAnimationFrame(limitFPS);
-};
 
 const catchUp = (time) => {
   let elapsed = time - lastTimestamp;
@@ -122,7 +113,7 @@ const catchUp = (time) => {
       loop.next();
       elapsed -= frameCost;
     }
-    render();
+    render(time);
   }
 
   rAF = requestAnimationFrame(catchUp);
@@ -133,7 +124,7 @@ const stop = () => {
 }
 const reset = () => {
   cancelAnimationFrame(rAF);
-  render();
+  requestAnimationFrame(render);
   cubeProps.rx = 0;
   cubeProps.ry = 0;
   cubeProps.rz = 0;
@@ -145,7 +136,6 @@ reset();
 <div class="control">
   <button on:click={step}>step</button>
   <button on:click={wrap(run)}>run</button>
-  <button on:click={wrap(limitFPS)}>limitFPS</button>
   <button on:click={wrap(catchUp)}>catchUp</button>
   <button on:click={stop}>stop</button>
   <button on:click={reset}>reset</button>

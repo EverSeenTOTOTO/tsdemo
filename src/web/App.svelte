@@ -1,22 +1,12 @@
 <script>
 import * as THREE from  'three';
 import GUI from 'lil-gui';
-import Stats from 'stats.js';
 import { onMount } from 'svelte';
 import Demo from './cube.svelte';
-
-// FPS stats
-const stats = new Stats();
-const sds = stats.domElement.style;
-
-sds.position = 'absolute'
-sds.left = ''
-sds.top = ''
-sds.right = '0px'
-sds.bottom = '0px'
-sds.margin = '2rem 6rem'
-stats.showPanel(0);
-document.body.appendChild(stats.domElement);
+import { PickHelper } from './pick'
+import { getCanvasRelativePosition } from './utils'
+import { DragControls } from 'three/examples/jsm/controls/DragControls.js'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 const gui = new GUI();
 
@@ -62,7 +52,7 @@ $: {
     cameraSetting.position.z
   );
   camera.updateProjectionMatrix();
-  render();
+  requestAnimationFrame(render);
 }
 
 const cameraFolder = gui.addFolder("Camera");
@@ -129,7 +119,7 @@ $: {
     lightSetting.position.y,
     lightSetting.position.z
   );
-  render();
+  requestAnimationFrame(render);
 }
 
 const lightFolder = gui.addFolder("Light");
@@ -160,7 +150,45 @@ const scene = new THREE.Scene();
 
 scene.add(light);
 
-const render = () => {
+// picker 
+const pickPosition = {
+  x: -9999,
+  y: -9999,
+}
+
+const pickFolder = gui.addFolder("Picker")
+const px = pickFolder.add(pickPosition, 'x')
+const py = pickFolder.add(pickPosition, 'y')
+pickFolder.close();
+
+const picker = new PickHelper();
+
+function setPickPosition(event) {
+  const pos = getCanvasRelativePosition(event, canvas.el);
+  pickPosition.x = (pos.x / canvas.width ) *  2 - 1;
+  pickPosition.y = (pos.y / canvas.height) * -2 + 1;  // note we flip Y
+  px.updateDisplay();
+  py.updateDisplay();
+  picker.pick(pickPosition, scene, camera)
+  requestAnimationFrame(render);
+}
+function clearPickPosition() { 
+  // 对于触屏，不像鼠标总是能有一个位置坐标，
+  // 如果用户不在触摸屏幕，我们希望停止拾取操作。
+  // 因此，我们选取一个特别的值，表明什么都没选中
+  pickPosition.x = -9999;
+  pickPosition.y = -9999;
+  px.updateDisplay();
+  py.updateDisplay();
+  picker.pick(pickPosition, scene, camera)
+  requestAnimationFrame(render);
+}
+
+window.addEventListener('mousemove', setPickPosition);
+window.addEventListener('mouseout', clearPickPosition);
+window.addEventListener('mouseleave', clearPickPosition);
+
+const render = (time) => {
   if (!renderer) return;
   if(resizeRendererToDisplaySize(renderer)) {
     const c = renderer.domElement;
@@ -169,18 +197,43 @@ const render = () => {
   }
 
   renderer.render(scene, camera);
-  stats.update();
 }
 
 onMount(() => {
   renderer = new THREE.WebGLRenderer({
     canvas: canvas.el,
+    antialias: true
   });
-  render();
+  requestAnimationFrame(render)
 });
+
+const setupControls = ({ detail }) => {
+  const controlsFolder = gui.addFolder("Controls");
+  const controls = {
+    drag: false,
+    orbit: true
+  };
+  const cube = detail.cube;
+  const dragControls = new DragControls([cube], camera, canvas.el);
+  dragControls.addEventListener('drag', () => {
+    requestAnimationFrame(render)
+    // FIXME: need update gui
+  });
+  dragControls.enabled = controls.drag;
+
+  const orbitControls = new OrbitControls(camera, canvas.el);
+  orbitControls.update();
+  orbitControls.addEventListener( 'change', render )
+  orbitControls.enabled = controls.orbit;
+
+  controlsFolder.add(controls, 'drag')
+    .onChange(() => { dragControls.enabled = controls.drag; });
+  controlsFolder.add(controls, 'orbit')
+    .onChange(() => { orbitControls.enabled = controls.orbit;});
+}
 </script>
 
-<Demo {gui} {scene} {render} />
+<Demo {gui} {scene} {render} on:cube={setupControls}/>
 <canvas 
   class="canvas"
   width={canvas.width}
