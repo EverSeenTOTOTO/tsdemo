@@ -6,7 +6,7 @@ module.exports = {
   coverageDirectory: 'coverage',
   coveragePathIgnorePatterns: [
     '/node_modules/',
-    '/graph/', // an error is thrown, don't know why
+    '/graph/', // an error is thrown, didn't figure out why
   ],
   coverageProvider: 'v8',
   moduleNameMapper: {

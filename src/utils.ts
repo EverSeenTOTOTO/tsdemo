@@ -121,13 +121,11 @@ export const flattern = (arr: any[]): any[] => {
   ], []);
 };
 
-export type Callback = (...args: any[]) => any;
+export const call = async <T extends (...args: Param[]) => any, Param>(fn: T, ...param: Param[]) => {
+  if (typeof fn !== 'function') return Promise.resolve(fn);
 
-export const call = async <T, Param>(fn: T, param: Param) => {
   // eslint-disable-next-line no-nested-ternary
-  return typeof fn === 'function'
-    ? fn.constructor.name === 'AsyncFunction'
-      ? fn(param)
-      : Promise.resolve(fn(param))
-    : Promise.resolve(fn);
+  return toString.call(fn) === '[object AsyncFunction]'
+    ? Promise.resolve(fn(...param))
+    : fn(...param);
 };

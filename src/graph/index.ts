@@ -135,11 +135,29 @@ export class Context implements IContext {
     return ctx;
   }
 
-  protected checkMaxConnection<S>(slot: ISlot<S>) {
-    if (slot.maxConnection) {
-      const tos = this.getConnectionsByFrom(slot);
+  emit<S, I, O>(node: INode<S, I, O>, slot: S, value: I) {
+    node.emit(slot, value, this);
+  }
 
-      if (tos.length >= slot.maxConnection) {
+  step(): Promise<void> {
+    return this.executor.step(this);
+  }
+
+  next(): Promise<void> {
+    return this.executor.next(this);
+  }
+
+  back(): Promise<void> {
+    return this.executor.back(this);
+  }
+
+  prev(): Promise<void> {
+    return this.executor.prev(this);
+  }
+
+  protected checkMaxConnection<S1, S2>(slot: ISlot<S1|S2>, conns: IConnection<S1, S2>[]) {
+    if (slot.maxConnection) {
+      if (conns.length >= slot.maxConnection) {
         throw new Error(`Slot ${slot.name} has reached max connection`);
       }
     }
@@ -157,8 +175,8 @@ export class Context implements IContext {
       throw new Error(`${to.name} has no slot ${toSlot}`);
     }
 
-    this.checkMaxConnection(fromS);
-    this.checkMaxConnection(toS);
+    this.checkMaxConnection(fromS, this.getConnectionsByFrom(fromS));
+    this.checkMaxConnection(toS, this.getConnectionsByTo(toS));
 
     const connection = new Connection(fromS, toS);
     this.connections.push(connection);

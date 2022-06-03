@@ -6,6 +6,7 @@ import {
   SteppedPipeNode,
 } from '@/graph/nodes';
 import { Node, Context, Slot } from '@/graph/index';
+import { ExtendArray } from '@/utils';
 
 describe('test basic', () => {
   const executor = new Executor();
@@ -33,6 +34,7 @@ describe('test clone', () => {
   it('clone node', () => {
     const node = new LoggerNode('test', LogLevel.warn);
     const clone = node.clone();
+
     expect(clone).toBeInstanceOf(LoggerNode);
     expect(clone.name).toBe('test');
 
@@ -57,10 +59,10 @@ describe('test clone', () => {
 
     const info = jest.spyOn(console, 'info').mockImplementation(() => {});
 
-    pipe.emit('input', 'test', clone);
+    clone.emit(pipe, 'input', 'test');
     expect(info).not.toHaveBeenCalled();
 
-    pipe.emit('input', 'test', ctx);
+    ctx.emit(pipe, 'input', 'test');
     expect(info).toHaveBeenCalled();
   });
 });
@@ -85,14 +87,14 @@ describe('test nodes', () => {
     const info = jest.spyOn(console, 'info').mockImplementation(() => {});
     const error = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-    pipe.emit('input', 'hello', ctx);
+    ctx.emit(pipe, 'input', 'hello');
 
     expect(info).toHaveBeenCalledTimes(1);
     expect(error).not.toHaveBeenCalled();
 
     log.setLevel(LogLevel.error);
 
-    pipe.emit('input', 'hello', ctx);
+    ctx.emit(pipe, 'input', 'hello');
     expect(info).toHaveBeenCalledTimes(2);
     expect(error).toHaveBeenCalled();
   });
@@ -116,17 +118,17 @@ describe('test nodes', () => {
     const info = jest.spyOn(console, 'info').mockImplementation(() => {});
     const error = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-    pipe.emit('input', 'hello', ctx);
+    ctx.emit(pipe, 'input', 'hello');
 
     expect(info).not.toHaveBeenCalled();
 
-    await ctx.executor.step(ctx);
+    await ctx.step();
     expect(info).toHaveBeenCalled();
     expect(error).not.toHaveBeenCalled();
 
-    await ctx.executor.step(ctx);
+    await ctx.step();
     expect(error).not.toHaveBeenCalled();
-    await ctx.executor.step(ctx);
+    await ctx.step();
     expect(error).toHaveBeenCalled();
   });
 
@@ -148,11 +150,80 @@ describe('test nodes', () => {
 
     const error = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-    pipe.emit('input', 'hello', ctx);
+    ctx.emit(pipe, 'input', 'hello');
 
-    await ctx.executor.next(ctx);
+    await ctx.next();
     expect(error).not.toHaveBeenCalled();
-    await ctx.executor.next(ctx);
+    await ctx.next();
     expect(error).toHaveBeenCalled();
+  });
+});
+
+describe('test back', () => {
+  class TestNode extends Node<'value', number, void> {
+    array: ExtendArray<number> = new ExtendArray<number>();
+
+    constructor(name: string) {
+      super(name);
+      this.slots = [
+        new Slot('value', this),
+      ];
+    }
+
+    emit(_slot: 'value', value: number, ctx: Context): void {
+      ctx.executor.submit({
+        desc: `Push ${value}`,
+        func: () => {
+          this.array.push(value);
+
+          return { // undo
+            desc: `Pop ${value}`,
+            func: () => {
+              if (this.array.tail() !== value) {
+                throw new Error(`Cannot pop back, tail is ${this.array.tail()}`);
+              }
+
+              this.array.pop();
+            },
+          };
+        },
+      });
+    }
+  }
+
+  it('test back', async () => {
+    const executor = new Executor();
+    const ctx = new Context(executor);
+
+    const pipe = new PipeNode('pipe');
+    const test = new TestNode('test');
+
+    ctx.addNode(pipe);
+    ctx.addNode(test);
+
+    ctx.connect(pipe, 'output', test, 'value');
+
+    ctx.emit(pipe, 'input', 1);
+    ctx.emit(pipe, 'input', 2);
+
+    expect([...test.array]).toEqual([]);
+
+    await ctx.next();
+    expect([...test.array]).toEqual([1, 2]);
+
+    ctx.emit(pipe, 'input', 3);
+
+    await ctx.step();
+    expect([...test.array]).toEqual([1, 2, 3]);
+    await ctx.back();
+    expect([...test.array]).toEqual([1, 2]);
+    await ctx.back();
+    expect([...test.array]).toEqual([1]);
+    await ctx.step();
+    expect([...test.array]).toEqual([1, 2]);
+    await ctx.prev();
+    expect([...test.array]).toEqual([]);
+    await ctx.next();
+    expect([...test.array]).toEqual([1, 2, 3]);
   });
 });

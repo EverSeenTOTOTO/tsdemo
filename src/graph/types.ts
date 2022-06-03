@@ -1,5 +1,3 @@
-import { Callback } from '@/utils';
-
 export interface ISlot<S> {
   name: S;
   node: INode<S, any, any>;
@@ -30,16 +28,21 @@ export interface IConnection<S1, S2> {
   break(): void;
 }
 
+export type Task = {
+  func: (ctx?: IContext) => Task|void|Promise<Task|void>;
+  desc?: string;
+};
+
 export interface IExecutor {
   clone(): IExecutor;
 
-  submit(cb: Callback): void;
+  submit(task: Task): void;
 
   reset(): void;
-  step(ctx?: IContext): Promise<void>;
-  next(ctx?: IContext): Promise<void>;
-  back(ctx?: IContext): Promise<void>;
-  prev(ctx?: IContext): Promise<void>;
+  step(ctx: IContext): Promise<void>;
+  next(ctx: IContext): Promise<void>;
+  back(ctx: IContext): Promise<void>;
+  prev(ctx: IContext): Promise<void>;
 }
 
 export interface IContext {
@@ -49,6 +52,13 @@ export interface IContext {
 
   clone(): IContext;
   reset(): void;
+
+  emit<S, I, O>(node: INode<S, I, O>, slot: S, value: I): void;
+
+  step(): Promise<void>;
+  next(): Promise<void>;
+  back(): Promise<void>;
+  prev(): Promise<void>;
 
   connect<S1, S2, V>(from: INode<S1, any, V>, fromSlot: S1, to: INode<S2, V, any>, toSlot: S2): IConnection<S1, S2>;
   disconnect<S1, S2, V>(from: INode<S1, any, V>, fromSlot: S1, to: INode<S2, V, any>, toSlot: S2): void;
