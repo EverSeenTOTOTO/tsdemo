@@ -1,7 +1,8 @@
-const dig2x = (radix = 16) => (dig: string) => {
+// 十进制转原码表示，保留符号
+const dig2x = (radix: number) => (dig: string) => {
   const num = Number(dig);
   if (!Number.isInteger(num)) {
-    throw new Error(`Expect a unsigned int, got ${num}`);
+    throw new Error(`Expect unsigned int, got ${num}`);
   }
 
   return Number(num).toString(radix);
@@ -10,7 +11,8 @@ const dig2x = (radix = 16) => (dig: string) => {
 export const dig2hex = dig2x(16);
 export const dig2bin = dig2x(2);
 
-const x2dig = (prefix = '0x') => (str: string) => {
+// 原码转十进制，保留符号
+const x2dig = (prefix: string) => (str: string) => {
   const neg = str.startsWith('-');
   const int = Number(`${prefix}${neg ? str.slice(1) : str}`);
 
@@ -24,20 +26,27 @@ const x2dig = (prefix = '0x') => (str: string) => {
 export const hex2dig = x2dig('0x');
 export const bin2dig = x2dig('0b');
 
-export const isNegtive = (dig: string|string[]) => dig[0] === '-';
+export const isNegative = (dig: string|string[]) => dig[0] === '-';
 
 // 原码
 export const dig2origin = (dig: string, n = 8) => {
+  const num = Number(dig);
+
+  if (num <= -(2 ** (n - 1))) {
+    throw new Error(`Negative overflow for dig2origin: ${num}`);
+  }
+
+  if (num >= (2 ** (n - 1))) {
+    throw new Error(`Positive overflow for dig2origin: ${num}`);
+  }
+
   const array = dig2bin(dig).split('');
 
-  if (isNegtive(dig)) {
+  // 负数前面有'-'，正数前面没有，array长度不同
+  if (isNegative(dig)) {
     array.splice(0, 1, '1');
   } else {
     array.splice(0, 0, '0');
-  }
-
-  if (array.length > n) {
-    throw new Error(`Integer oveflow, expect ${(-2) ** (n - 1) + 1} <= x <= ${2 ** (n - 1) - 1}, got ${dig}`);
   }
 
   while (array.length < n) array.splice(1, 0, '0');
@@ -45,6 +54,7 @@ export const dig2origin = (dig: string, n = 8) => {
   return array.join('');
 };
 
+// 移码
 export const dig2shift = (dig: string, bias: number) => {
   return dig2bin(String(Number(dig) + bias));
 };
@@ -52,33 +62,31 @@ export const dig2shift = (dig: string, bias: number) => {
 // 补码
 export const dig2complement = (dig: string, n = 8) => {
   const num = Number(dig);
-  const min = (-2) ** (n - 1);
 
-  if (num < min) {
-    throw new Error(`Integer oveflow, expect x >= ${min}, got ${num}`);
+  if (num < -(2 ** (n - 1))) {
+    throw new Error(`Negative overflow for dig2complement: ${num}`);
   }
 
-  return !isNegtive(dig)
-    ? dig2origin(dig, n)
-    // mod 2^n
-    : dig2origin(String(2 ** n - (-Number(dig))), n + 1).slice(1);
+  if (num >= (2 ** (n - 1))) {
+    throw new Error(`Positive overflow for dig2complement: ${num}`);
+  }
+
+  return isNegative(dig)
+    ? dig2bin(String(2 ** n + num))
+    : dig2origin(String(num), n);
 };
 
+// 将int强行解释为uint
 export const int2uint = (dig: string, n = 8) => bin2dig(dig2complement(dig, n));
+// 将uint强行解释为int
 export const uint2int = (dig: string, n = 8) => {
-  if (isNegtive(dig)) {
+  if (isNegative(dig)) {
     throw new Error(`Expect unsigned int, got ${dig}`);
   }
 
   const str = dig2origin(dig, n + 1);
 
-  // elimilate n+1
-  if (str[0] === '1') {
-    throw new Error(`Integer oveflow, expect x <= ${2 ** n - 1}, got ${dig}`);
-  }
-
-  return str[1] === '1'
-    // mod 2^n
-    ? String(-(2 ** n - Number(bin2dig(str.slice(1)))))
+  return str[1] === '1' // 符号位1解释为负数
+    ? String(-(2 ** n - Number(bin2dig(str.slice(1))))) // 原负数+2^n=X，原负数=X-2^n
     : bin2dig(str.slice(1));
 };
