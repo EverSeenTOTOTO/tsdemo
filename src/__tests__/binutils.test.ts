@@ -1,144 +1,168 @@
 /* eslint-disable no-bitwise */
 import { repeat } from '@/utils';
 import {
-  bin2dig,
-  dig2bin,
-  dig2hex,
-  hex2dig,
-  int2uint,
-  uint2int,
-  dig2origin,
-  dig2complement,
-  dig2shift,
+  b2d,
+  c2d,
+  d2b,
+  d2c,
+  d2h,
+  d2o,
+  d2s,
+  h2d,
+  o2d,
+  s2d,
 } from '@/wasm/binutils';
 
 it('test dig2hex', () => {
-  expect(dig2hex('0')).toBe('0');
-  expect(dig2hex('01')).toBe('1');
-  expect(dig2hex('15')).toBe('f');
-  expect(dig2hex('16')).toBe('10');
-  expect(dig2hex('-1')).toBe('-1');
-  expect(dig2hex('-01')).toBe('-1');
-  expect(dig2hex('-16')).toBe('-10');
+  expect(d2h('0')).toBe('0');
+  expect(d2h('01')).toBe('1');
+  expect(d2h('15')).toBe('f');
+  expect(d2h('16')).toBe('10');
+  expect(d2h('-1')).toBe('-1');
+  expect(d2h('-01')).toBe('-1');
+  expect(d2h('-16')).toBe('-10');
 
-  expect(() => dig2hex('1.1')).toThrow();
+  expect(() => d2h('1.1')).toThrow();
 
   // 0xffffffff
-  expect(dig2hex(String(2 ** 32 - 1)).length).toBe(8);
+  expect(d2h(String(2 ** 32 - 1)).length).toBe(8);
 });
 
 it('test dig2bin', () => {
-  expect(dig2bin('0')).toBe('0');
-  expect(dig2bin('15')).toBe('1111');
-  expect(dig2bin('16')).toBe('10000');
-  expect(dig2bin('-1')).toBe('-1');
-  expect(dig2bin('-16')).toBe('-10000');
-  expect(dig2bin('127')).toBe('1111111');
-  expect(dig2bin('-127')).toBe('-1111111');
+  expect(d2b('0')).toBe('0');
+  expect(d2b('15')).toBe('1111');
+  expect(d2b('16')).toBe('10000');
+  expect(d2b('-1')).toBe('-1');
+  expect(d2b('-16')).toBe('-10000');
+  expect(d2b('127')).toBe('1111111');
+  expect(d2b('-127')).toBe('-1111111');
 
-  expect(() => dig2bin('1.1')).toThrow();
+  expect(() => d2b('1.1')).toThrow();
 
-  expect(dig2bin(String(2 ** 32 - 1)).length).toBe(32);
+  expect(d2b(String(2 ** 32 - 1)).length).toBe(32);
 });
 
 it('test hex2dig', () => {
-  expect(hex2dig('f')).toBe('15');
-  expect(hex2dig('11')).toBe('17');
-  expect(hex2dig('-11')).toBe('-17');
+  expect(h2d('f')).toBe('15');
+  expect(h2d('11')).toBe('17');
+  expect(h2d('-11')).toBe('-17');
 
-  expect(() => hex2dig('1.1')).toThrow();
+  expect(() => h2d('1.1')).toThrow();
 
-  expect(hex2dig('ffffffff')).toBe(String(2 ** 32 - 1));
+  expect(h2d('ffffffff')).toBe(String(2 ** 32 - 1));
 });
 
 it('test bin2dig', () => {
-  expect(bin2dig('1111')).toBe('15');
-  expect(bin2dig('11')).toBe('3');
-  expect(bin2dig('-11')).toBe('-3');
-  expect(bin2dig('1111111')).toBe('127');
-  expect(bin2dig('-1111111')).toBe('-127');
+  expect(b2d('1111')).toBe('15');
+  expect(b2d('11')).toBe('3');
+  expect(b2d('-11')).toBe('-3');
+  expect(b2d('1111111')).toBe('127');
+  expect(b2d('-1111111')).toBe('-127');
 
-  expect(() => bin2dig('1.1')).toThrow();
+  expect(() => b2d('1.1')).toThrow();
 
   // eslint-disable-next-line prefer-spread
-  expect(bin2dig(repeat('1', 32).join(''))).toBe(String(2 ** 32 - 1));
+  expect(b2d(repeat('1', 32).join(''))).toBe(String(2 ** 32 - 1));
 });
 
 it('test dig2origin', () => {
-  expect(dig2origin('0')).toBe('00000000');
-  expect(dig2origin('-2')).toBe('10000010');
-  expect(dig2origin('-127')).toBe('11111111');
-  expect(dig2origin('127')).toBe('01111111');
+  expect(d2o('0')).toBe('00000000');
+  expect(d2o('-2')).toBe('10000010');
+  expect(d2o('-127')).toBe('11111111');
+  expect(d2o('127')).toBe('01111111');
 
-  expect(() => dig2origin('-128')).toThrow(/Negative overflow/);
-  expect(() => dig2origin('128')).toThrow(/Positive overflow/);
+  expect(() => d2o('-128')).toThrow(/Negative overflow/);
+  expect(() => d2o('128')).toThrow(/Positive overflow/);
+});
+
+test('test origin2dig', () => {
+  expect(o2d('00000000')).toBe('0');
+  expect(o2d('10000000')).toBe('0');
+  expect(o2d('10000010')).toBe('-2');
+  expect(o2d('11111111')).toBe('-127');
+  expect(o2d('01111111')).toBe('127');
 });
 
 it('test dig2shift', () => {
-  expect(dig2shift('0', 0)).toBe('0');
-  expect(dig2shift('-1', 8)).toBe(dig2bin('7'));
-  expect(dig2shift('-8', 8)).toBe(dig2bin('0'));
-  expect(dig2shift('1', 8)).toBe(dig2bin('9'));
-  expect(dig2shift('7', 8)).toBe(dig2bin('15'));
+  expect(d2s('-1', 8)).toBe(d2b('7'));
+  expect(d2s('-8', 8)).toBe(d2b('0'));
+  expect(d2s('1', 8)).toBe(d2b('9'));
+});
+
+it('test shift2dig', () => {
+  expect(s2d('111', 8)).toBe('-1');
+  expect(s2d('0', 8)).toBe('-8');
+  expect(s2d('1001', 8)).toBe('1');
 });
 
 it('test dig2complement', () => {
-  expect(dig2complement('0')).toBe('00000000');
-  expect(dig2origin('32')).toBe(dig2complement('32'));
-  expect(dig2complement('-1')).toBe('11111111');
-  expect(dig2complement('-123')).toBe('10000101');
-  expect(dig2complement('127')).toBe('01111111');
-  expect(dig2complement('-128')).toBe('10000000');
+  expect(d2c('0')).toBe('00000000');
+  expect(d2o('32')).toBe(d2c('32'));
+  expect(d2c('-1')).toBe('11111111');
+  expect(d2c('-123')).toBe('10000101');
+  expect(d2c('127')).toBe('01111111');
+  expect(d2c('-128')).toBe('10000000');
 
-  expect(() => dig2complement('128')).toThrow(/Positive overflow/);
-  expect(() => dig2complement('-129')).toThrow(/Negative overflow/);
+  expect(() => d2c('128')).toThrow(/Positive overflow/);
+  expect(() => d2c('-129')).toThrow(/Negative overflow/);
+});
+
+it('test dig2complement', () => {
+  expect(c2d('00000000')).toBe('0');
+  expect(c2d(d2c('32'))).toBe('32');
+  expect(c2d('11111111')).toBe('-1');
+  expect(c2d('10000101')).toBe('-123');
+  expect(c2d('01111111')).toBe('127');
+  expect(c2d('10000000')).toBe('-128');
+});
+
+it('test uint2int', () => {
+  expect(c2d(d2b('128'))).toBe('-128');
+  expect(c2d(d2b('255'))).toBe('-1');
+  expect(c2d('01111111')).toBe('127');
+});
+
+it('test int2uint', () => {
+  expect(b2d(d2c('-128'))).toBe('128');
+  expect(b2d(d2c('-1'))).toBe('255');
+  expect(b2d(d2c('127'))).toBe('127');
 });
 
 it('test mixed', () => {
-  // int -> complement -> explain as uint
-  expect(int2uint('-1')).toBe('255');
-  expect(int2uint('-128')).toBe('128');
-
-  expect(uint2int('255')).toBe('-1');
-  expect(uint2int('128')).toBe('-128');
-  expect(uint2int('127')).toBe('127');
-
-  expect(() => uint2int('-1')).toThrow(/Expect unsigned int/);
-
-  expect(dig2bin(String(~0xf))).toBe('-10000');
+  expect(d2b(String(~0xf))).toBe('-10000');
 
   // x的最高4个有效字节不变，其余各位全变位0
   expect(
-    dig2bin(
+    d2b(
       String(
-        (Number(bin2dig('11111111')) >> 4) << 4,
+        (Number(b2d('11111111')) >> 4) << 4,
       ),
     ),
   ).toBe('11110000');
 
   // x的最低4个有效字节不变，其余各位全变位0
   expect(
-    dig2bin(
+    d2b(
       String(
-        Number(bin2dig('11111111')) & 0xf,
+        Number(b2d('11111111')) & 0xf,
       ),
     ),
   ).toBe('1111');
 
   // x的最低4个有效字节全变1,其余各位不变
   expect(
-    dig2bin(
+    d2b(
       String(
-        Number(bin2dig('10101010')) | 0xf,
+        Number(b2d('10101010')) | 0xf,
       ),
     ),
   ).toBe('10101111');
 
   // x的最低4个有效字节全变位0，其余各位取反
   expect(
-    dig2complement(
+    d2c(
       String(
-        ((Number(bin2dig('10101010')) ^ (~0xf)) >> 4) << 4,
+        ((Number(b2d('10101010')) ^ (~0xf)) >> 4) << 4,
       ),
       16,
     ),

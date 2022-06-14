@@ -8,8 +8,8 @@ const dig2x = (radix: number) => (dig: string) => {
   return Number(num).toString(radix);
 };
 
-export const dig2hex = dig2x(16);
-export const dig2bin = dig2x(2);
+export const d2h = dig2x(16);
+export const d2b = dig2x(2);
 
 // 原码转十进制，保留符号
 const x2dig = (prefix: string) => (str: string) => {
@@ -17,19 +17,19 @@ const x2dig = (prefix: string) => (str: string) => {
   const int = Number(`${prefix}${neg ? str.slice(1) : str}`);
 
   if (Number.isNaN(int)) {
-    throw new Error(`Expect hex string, got ${str}`);
+    throw new Error(`Expect valid number, got ${str}`);
   }
 
   return neg ? String(-int) : String(int);
 };
 
-export const hex2dig = x2dig('0x');
-export const bin2dig = x2dig('0b');
+export const h2d = x2dig('0x');
+export const b2d = x2dig('0b');
 
 export const isNegative = (dig: string|string[]) => dig[0] === '-';
 
 // 原码
-export const dig2origin = (dig: string, n = 8) => {
+export const d2o = (dig: string, n = 8) => {
   const num = Number(dig);
 
   if (num <= -(2 ** (n - 1))) {
@@ -40,7 +40,7 @@ export const dig2origin = (dig: string, n = 8) => {
     throw new Error(`Positive overflow for dig2origin: ${num}`);
   }
 
-  const array = dig2bin(dig).split('');
+  const array = d2b(dig).split('');
 
   // 负数前面有'-'，正数前面没有，array长度不同
   if (isNegative(dig)) {
@@ -54,13 +54,23 @@ export const dig2origin = (dig: string, n = 8) => {
   return array.join('');
 };
 
+export const o2d = (bin: string) => {
+  return bin[0] === '1'
+    ? String(-Number(b2d(bin.slice(1))))
+    : b2d(bin.slice(1));
+};
+
 // 移码
-export const dig2shift = (dig: string, bias: number) => {
-  return dig2bin(String(Number(dig) + bias));
+export const d2s = (dig: string, bias: number) => {
+  return d2b(String(Number(dig) + bias));
+};
+
+export const s2d = (bin: string, bias: number) => {
+  return String(Number(b2d(bin)) - bias);
 };
 
 // 补码
-export const dig2complement = (dig: string, n = 8) => {
+export const d2c = (dig: string, n = 8) => {
   const num = Number(dig);
 
   if (num < -(2 ** (n - 1))) {
@@ -72,21 +82,16 @@ export const dig2complement = (dig: string, n = 8) => {
   }
 
   return isNegative(dig)
-    ? dig2bin(String(2 ** n + num))
-    : dig2origin(String(num), n);
+    ? d2b(String(2 ** n + num))
+    : d2o(String(num), n);
 };
 
-// 将int强行解释为uint
-export const int2uint = (dig: string, n = 8) => bin2dig(dig2complement(dig, n));
-// 将uint强行解释为int
-export const uint2int = (dig: string, n = 8) => {
-  if (isNegative(dig)) {
-    throw new Error(`Expect unsigned int, got ${dig}`);
+export const c2d = (bin: string, n = 8) => {
+  if (bin.length < n) {
+    throw new Error(`Bit length is too short, expect ${n}, got ${bin.length}`);
   }
 
-  const str = dig2origin(dig, n + 1);
-
-  return str[1] === '1' // 符号位1解释为负数
-    ? String(-(2 ** n - Number(bin2dig(str.slice(1))))) // 原负数+2^n=X，原负数=X-2^n
-    : bin2dig(str.slice(1));
+  return bin[0] === '1'
+    ? String(Number(b2d(bin)) - 2 ** n)
+    : b2d(bin);
 };

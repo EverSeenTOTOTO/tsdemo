@@ -6,6 +6,7 @@ import json from '@rollup/plugin-json';
 import svelte from 'rollup-plugin-svelte';
 // import { terser } from 'rollup-plugin-terser';
 import path from 'path';
+import pkg from './package.json';
 
 const extensions = ['.mjs', '.js', '.ts', '.json', '.node'];
 const opts = {
@@ -37,7 +38,7 @@ const opts = {
 
 export default [
   {
-    external: ['puppeteer-core'],
+    external: pkg.dependencies,
     input: path.resolve(__dirname, 'src/index.ts'),
     output: [
       {

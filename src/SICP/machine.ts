@@ -51,22 +51,22 @@ const getLabel = (label: any) => {
   return typeof label === 'symbol' ? label.description : label;
 };
 
-const lookupLabel = (labels: LabelPosition[], lbl: string, machine: Machine) => {
+const lookupLabel = (labels: LabelPosition[], lbl: string) => {
   const lbls = labels.filter((label) => {
     if (Array.isArray(label) && typeof label[0] === 'symbol') {
       return label[0].description === lbl;
     }
 
-    throw new Error(`Bad label ${lbl}`);
+    throw new Error(`Invalid label ${lbl}`);
   });
 
   if (lbls.length > 1) {
-    throw new Error(`Ambiguous label ${lbl}`);
+    throw new Error(`Duplicate label ${lbl}`);
   }
 
   const [[, pos]] = lbls;
 
-  return machine.instructionSequence.slice(pos);
+  return pos;
 };
 
 const makePrimitiveExp = (exp: PrimitiveInst, labels: LabelPosition[], machine: Machine) => {
@@ -76,7 +76,7 @@ const makePrimitiveExp = (exp: PrimitiveInst, labels: LabelPosition[], machine: 
     case 'const':
       return () => input;
     case 'label':
-      return () => lookupLabel(labels, input, machine);
+      return () => lookupLabel(labels, input);
     case 'reg':
       return () => machine.getRegisterContent(input);
     default:
@@ -88,9 +88,9 @@ const makeOperationExp = (exp: [PrimitiveOp, ...PrimitiveInst[]], labels: LabelP
   const [[, op], ...input] = exp; // [op <op>] <input> ...
 
   const operation = machine.getOperation(op);
-  const aprocs = input.map((arg: any) => makePrimitiveExp(arg, labels, machine));
+  const callbacks = input.map((arg: any) => makePrimitiveExp(arg, labels, machine));
 
-  return () => operation(...aprocs.map((f: () => any) => f()));
+  return () => operation(...callbacks.map((cb) => cb()));
 };
 
 const makeAssign = (inst: AssignInst, labels: LabelPosition[], machine: Machine) => {
@@ -119,7 +119,7 @@ const makeTest = (inst: TestInst, labels: LabelPosition[], machine: Machine) => 
     };
   }
 
-  throw new Error(`Bad test ${getLabel(condition[0])}`);
+  throw new Error(`Invalid test ${getLabel(condition[0])}`);
 };
 
 const makeBranch = (inst: BranchInst, labels: LabelPosition[], machine: Machine) => {
@@ -127,17 +127,18 @@ const makeBranch = (inst: BranchInst, labels: LabelPosition[], machine: Machine)
 
   if (dest === 'label') { // branch [label <lbl>]
     return () => {
-      const insts = lookupLabel(labels, lbl, machine);
+      const pos = lookupLabel(labels, lbl);
 
+      // 上一次test的结果会被存在flag里面
       if (machine.getRegisterContent('flag')) {
-        machine.setRegisterContent('pc', insts);
+        machine.setRegisterContent('pc', pos);
       } else {
         machine.advancePC();
       }
     };
   }
 
-  throw new Error(`Bad branch ${getLabel(dest)}`);
+  throw new Error(`Invalid branch ${getLabel(dest)}`);
 };
 
 const makeGoto = (inst: GotoInst, labels: LabelPosition[], machine: Machine) => {
@@ -145,9 +146,9 @@ const makeGoto = (inst: GotoInst, labels: LabelPosition[], machine: Machine) => 
 
   if (dest === 'label') { // goto [label <lbl>]
     return () => {
-      const insts = lookupLabel(labels, lbl, machine);
+      const pos = lookupLabel(labels, lbl);
 
-      machine.setRegisterContent('pc', insts);
+      machine.setRegisterContent('pc', pos);
     };
   }
 
@@ -159,11 +160,11 @@ const makeGoto = (inst: GotoInst, labels: LabelPosition[], machine: Machine) => 
     };
   }
 
-  throw new Error(`Bad goto ${getLabel(dest)}`);
+  throw new Error(`Invalid goto ${getLabel(dest)}`);
 };
 
 const makeSave = (inst: SaveInst, _labels: LabelPosition[], machine: Machine) => {
-  const [,reg] = inst;
+  const [, reg] = inst;
 
   if (typeof reg === 'string') { // save <reg>
     return () => {
@@ -174,11 +175,11 @@ const makeSave = (inst: SaveInst, _labels: LabelPosition[], machine: Machine) =>
     };
   }
 
-  throw new Error(`Bad save ${getLabel(reg)}`);
+  throw new Error(`Invalid save ${getLabel(reg)}`);
 };
 
 const makeRestore = (inst: RestoreInst, _labels: LabelPosition[], machine: Machine) => {
-  const [,reg] = inst;
+  const [, reg] = inst;
 
   if (typeof reg === 'string') { // restore <reg>
     return () => {
@@ -189,7 +190,7 @@ const makeRestore = (inst: RestoreInst, _labels: LabelPosition[], machine: Machi
     };
   }
 
-  throw new Error(`Bad restore ${getLabel(reg)}`);
+  throw new Error(`Invalid restore ${getLabel(reg)}`);
 };
 
 const makePerform = (inst: PerformInst, labels: LabelPosition[], machine: Machine) => {
@@ -197,15 +198,15 @@ const makePerform = (inst: PerformInst, labels: LabelPosition[], machine: Machin
 
   if (op === 'op') {
     const operation = machine.getOperation(oprand);
-    const aprocs = input.map((arg: any) => makePrimitiveExp(arg, labels, machine));
+    const callbacks = input.map((arg: any) => makePrimitiveExp(arg, labels, machine));
 
     return () => {
-      operation(...aprocs.map((f: () => any) => f()));
+      operation(...callbacks.map((cb) => cb()));
       machine.advancePC();
     };
   }
 
-  throw new Error(`Bad perform ${getLabel(op)}`);
+  throw new Error(`Invalid perform ${getLabel(op)}`);
 };
 
 const makeExecutionProcedure = (inst: Instruction, labels: LabelPosition[], machine: Machine) => {
@@ -267,9 +268,9 @@ export class Machine {
 
   stack: any[];
 
-  pc: Register<CompiledInstruction[]>;
+  pc: Register<number>;
 
-  instructionSequence: CompiledInstruction[];
+  instructions: CompiledInstruction[];
 
   registers: Map<string, Register<any>>;
 
@@ -289,29 +290,40 @@ export class Machine {
       this.allocateRegister(name);
     }
 
-    this.instructionSequence = assemble(code, this);
+    this.instructions = assemble(code, this);
   }
 
   start() {
-    this.pc.set(this.instructionSequence);
-    this.execute();
+    this.pc.set(0);
+
+    const runToEnd = () => {
+      const pos = this.pc.get();
+
+      if (typeof pos === 'number' && pos < this.instructions.length) {
+        this.step();
+        runToEnd();
+      }
+    };
+
+    runToEnd();
   }
 
-  private execute() {
-    const insts = this.pc.get();
-    if (Array.isArray(insts) && insts.length > 0) { // [[inst, callback], ...]
-      insts[0][1]();
-      this.execute();
-    }
+  private step() {
+    const pos = this.pc.get();
+    const [,proc] = this.instructions.slice(pos)[0];
+
+    proc();
   }
 
   advancePC() {
-    const insts = this.pc.get();
+    const pos = this.pc.get();
 
-    if (Array.isArray(insts)) {
-      const [,...rest] = insts;
+    if (typeof pos !== 'number') {
+      throw new Error(`Invalid pc: ${pos}`);
+    }
 
-      this.pc.set(rest);
+    if (pos < this.instructions.length) {
+      this.pc.set(pos + 1);
     }
   }
 
