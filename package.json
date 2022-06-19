@@ -8,6 +8,7 @@
     "express": "^4.17.3",
     "lil-gui": "^0.16.1",
     "reflect-metadata": "^0.1.13",
+    "roughjs": "^4.5.2",
     "three": "^0.139.2"
   },
   "devDependencies": {

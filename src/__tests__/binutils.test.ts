@@ -119,6 +119,7 @@ it('test dig2complement', () => {
 it('test uint2int', () => {
   expect(c2d(d2b('128'))).toBe('-128');
   expect(c2d(d2b('255'))).toBe('-1');
+  // d2b('127') is '1111111', no leading '0'
   expect(c2d('01111111')).toBe('127');
 });
 
@@ -128,7 +129,7 @@ it('test int2uint', () => {
   expect(b2d(d2c('127'))).toBe('127');
 });
 
-it('test mixed', () => {
+it('test fused', () => {
   expect(d2b(String(~0xf))).toBe('-10000');
 
   // x的最高4个有效字节不变，其余各位全变位0
