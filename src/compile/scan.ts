@@ -25,14 +25,14 @@ export type Token = {
 };
 
 const makeToken = (type: Token['type'], pos: Position, source: string): Token => {
-  const clone = pos.clone();
+  const snapshot = pos.clone();
 
   pos.column += source.length;
   pos.cursor += source.length;
 
   return {
     type,
-    pos: clone,
+    pos: snapshot,
     source,
   };
 };
@@ -97,7 +97,7 @@ export function readIdentifier(input: string, pos: Position): Token {
   throw new Error(`Unrecognized identifier at ${pos.cursor}`);
 }
 
-const DOT_REGEX = /^(?:\.\.\.|\.\.|\.)/;
+const DOT_REGEX = /^(?:\.\.?\.?)/;
 export function readDot(input: string, pos: Position): Token {
   const match = DOT_REGEX.exec(input.slice(pos.cursor));
 

@@ -13,7 +13,7 @@
 [= b 2]
 [= c [.. 1 10]]
 [= d [obj 1 [obj 2 3]]]
-[= [.x e] [.y.z f] d]
+[= [.x e, .y.z f] d]
 [= [x] [1 2]]
 [= [. x] [1 2 3]] ; x = 2
 [= [... x] [1 2 3]] ; x = [2 3]
@@ -25,8 +25,8 @@
 
 ```js
 [match a
-  [[and [> q] [< p]] foo]
-  [[regex '[a-z]+' 'g'].match [bar]]]
+  [[and [> q a] [< p a]] foo]
+  [[[regex '[a-z]+' 'g'].test a] [bar]]]
 
 [loop [= i 0] [< i 10] 
   [if [= [% i 2] 0]
@@ -38,36 +38,35 @@
 
 ```js
 
-[= foo/[] 2]
+[= foo /[] 2]
 
 [foo]
 
-[= foo/[. z]
-  [log [.. z 4]/[i]]
+[= foo /[. z] [log [.. z 4]/[i]]
 
 [foo 'ignored' 0]
 
-[= fib/[n] 
+[= fib /[n]   
   [match n 
     [[in 0 1] 1]
     [... [+ 
       [fib [- n 1]] 
       [fib [- n 2]]]]]]
 
-[/[] [/[] 2]]
+[/[] [/[] [2]]]
 ```
 
 ## 数据结构
 
 ```js
-[= stack/[vec]
-  [vec/= vec]
-  [clear/[] [= this.vec []]]
-  [push/[x] [= this.vec [.. this.vec [x]]]]
-  [pop/[] [begin
+[= stack /[vec] [begin
+  [= this.vec vec]
+  [= this.clear /[] [= this.vec []]]
+  [= this.push /[x] [= this.vec [.. this.vec [x]]]]
+  [= this.pop /[] [begin
     [= [... x] this.vec]
     [splice this.vec [- [this.vec.len] 1] 1]
-    x]]]
+    x]]]]
 
 [= s [stack [1 2 3]]]
 [s.push 2]
@@ -75,16 +74,13 @@
 
 [= v [1 2 3]]
 [= v [.. v [2]]]
-[= a v.2]
-[= b v.[- v.len 1]]
-[map v/[x] [+ x 1]]
-[+ v/[x] 1]
-[map v/[x, idx] [+ x idx]]
+[map v /[x] [+ x 1]]
+[map v /[x, idx] [+ x idx]]
 
-[= obj/[a b]
-  [a/= a]
-  [b/= b]
-  [log/[] [log this.a] [log this.b]]]
+[= obj /[a b] [begin
+  [= this.a a]
+  [= this.b b]
+  [log /[] [log this.b]]]]
 
 [= o [obj 1 [obj 2 3]]]
 [log o.a]
@@ -121,38 +117,45 @@
 ```
 
 ```js 
-[export SimpleQeuue/[watcher, [= interval 300]]
-  [watcher/= watcher]
-  [interval/= interval]
-  [queue/= []]
-  [enque/[e] 
+[export SimpleQeuue /[watcher, [= interval 300], [.text name]] [begin
+  [= this.watcher watcher]
+  [= this.interval interval]
+  [= this.name name]
+  [= this.queue []]
+  [= this.enque /[e] [begin
     [match e.type 
       [== 'jump' [= this.queue [vec e]]]
       [== 'refresh' [begin 
         [= this.queue [this.queue.filter /[each] [!= each.type e.type]]]
         [this.queue.push e]]]]
-    [this.notify]]
-  [notify/[]
+    [this.notify]]]
+  [= this.notify /[]
     [if this.timeoutId [ret]]
-    [= this.timeoutId [setTimeout /[] [this.dispatch] this.interval]]]
-  [dispatch/[] [...]]
+    [= this.timeoutId [setTimeout /[] [[this.dispatch] this.interval]]]]
+  [= this.dispatch /[] [...]]]]
 ```
 
 ## BNF
 
 ```bnf
-comment ::= ';' .* ';'?
+<lit> ::= <num> | <str> | <bool>
+<unOp> ::= '-' | '!'
+<binOp> ::= '..'
+<dot> ::= '.' <id> <dot>
 
-string ::= ' .* '
-boolean ::= 'true'|'false'
-number ::= '-?[0-9]+(\.[0-9]+)?(e-?[0-9]+)?'
+<objExpand> ::= '[' (<dot> <id> ',')* <dot> <id> ']'
+<vecExpandItem> ::= '.' | '...' | <lit> | <id> | <expand>
+<vecExpand> ::= '[' <vecExpandItem>* <vecExpandItem> ']'
 
-literal ::= string|number|boolean
+<expand> ::= <objExpand> | <vecExpand>
 
-id ::= [a-zA-Z_][a-zA-Z0-9_]*
-dot :: '.' id
-member ::= id dot+
+<func> ::= '/' (<expand> | '['']') <body>
 
-expand ::= '[' '.'|id|dot|'...'|expand ']'
-slash ::= '/' expand
+<assign> ::= '[' '=' (<id> | <expand>) <body> ']'
+
+<binOpExpr> ::= '[' <binOp> <body> <body> ']'
+<unOpExpr> ::= '[' <unOp> <body> ']'
+
+<body> ::= <func> | <assign> | <binOpExpr> | <unOpExpr> | <id> | <lit>
+<expr> ::= ('[' <expr> <expr>*']' | <body> | '['']') <dot>*
 ```
