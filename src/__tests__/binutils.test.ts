@@ -11,7 +11,7 @@ import {
   h2d,
   o2d,
   s2d,
-} from '@/wasm/binutils';
+} from '@/bin/binutils';
 
 it('test dig2hex', () => {
   expect(d2h('0')).toBe('0');
