@@ -16,11 +16,6 @@ it('skipWhitespace', () => {
     column: 1,
     cursor: 1,
   });
-  expect(scan.skipWhitespace('\n\r', new scan.Position())).toEqual({
-    row: 2,
-    column: 0,
-    cursor: 2,
-  });
   expect(scan.skipWhitespace('\r\n', new scan.Position())).toEqual({
     row: 1,
     column: 0,
@@ -36,15 +31,15 @@ it('skipWhitespace', () => {
     column: 1,
     cursor: 10,
   });
-  expect(scan.skipWhitespace('a ', new scan.Position())).toEqual({
-    row: 0,
+  expect(scan.skipWhitespace('; aa\na', new scan.Position())).toEqual({
+    row: 1,
     column: 0,
-    cursor: 0,
+    cursor: 5,
   });
-  expect(scan.skipWhitespace(' a ', new scan.Position())).toEqual({
+  expect(scan.skipWhitespace(' ;aa\\;aa;a', new scan.Position())).toEqual({
     row: 0,
-    column: 1,
-    cursor: 1,
+    column: 9,
+    cursor: 9,
   });
 });
 
@@ -52,6 +47,7 @@ it('readString', () => {
   expect(scan.readString("''", new scan.Position()).source).toBe("''");
   expect(scan.readString("'\\''", new scan.Position()).source).toBe("'\\''");
   expect(scan.readString("'str'", new scan.Position()).source).toBe("'str'");
+  expect(scan.readString("'str\tstr'", new scan.Position()).source).toBe("'str\tstr'");
   expect(() => scan.readString("'str\nstr'", new scan.Position())).toThrow();
 });
 
@@ -88,6 +84,7 @@ it('readDot', () => {
 it('readComment', () => {
   expect(scan.readComment(';', new scan.Position()).source).toBe(';');
   expect(scan.readComment(';..', new scan.Position()).source).toBe(';..');
+  expect(scan.readComment(';.\n.', new scan.Position()).source).toBe(';.');
   expect(scan.readComment(';.\\;..', new scan.Position()).source).toBe(';.\\;..');
   expect(scan.readComment(';..;..', new scan.Position()).source).toBe(';..;');
   expect(scan.readComment(';..\\; ..;.', new scan.Position()).source).toBe(';..\\; ..;');
@@ -95,9 +92,18 @@ it('readComment', () => {
   expect(() => scan.readComment('\\;;', new scan.Position())).toThrow();
 });
 
-it('readToken', () => {
+it('readWhitespace', () => {
+  expect(scan.readWhitespace(' ', new scan.Position()).source).toBe(' ');
+  expect(scan.readWhitespace('\t', new scan.Position()).source).toBe('\t');
+  expect(scan.readWhitespace('\n', new scan.Position()).source).toBe('\n');
+  expect(scan.readWhitespace('\r\n', new scan.Position()).source).toBe('\r\n');
+  expect(scan.readWhitespace('  \n\t', new scan.Position()).source).toBe(' ');
+  expect(() => scan.readWhitespace('\\n', new scan.Position())).toThrow();
+});
+
+it('raise', () => {
   const source = `
-[export SimpleQeuue/[watcher [= interval 300] ;queue name; [= name 'q']]
+[export SimpleQeuue/[watcher [= interval 300] [= name 'q']]
   [dispatch/[] [...]]
 `;
   const pos = new scan.Position();
@@ -108,14 +114,14 @@ it('readToken', () => {
   expect(pos.column).toBe(0);
   expect(pos.cursor).toBe(1);
 
-  expect(scan.readToken(source, pos).source).toBe('[');
+  expect(scan.raise(source, pos).source).toBe('[');
 
   scan.skipWhitespace(source, pos);
-  expect(scan.readToken(source, pos).source).toBe('export');
+  expect(scan.raise(source, pos).source).toBe('export');
 
   scan.skipWhitespace(source, pos);
 
-  let token = scan.readToken(source, pos);
+  let token = scan.raise(source, pos);
 
   expect(token.source).toBe('SimpleQeuue');
   expect(token.pos.column).toBe(8);
@@ -125,10 +131,27 @@ it('readToken', () => {
 
   while (token.type !== 'eof') {
     scan.skipWhitespace(source, pos);
-    token = scan.readToken(source, pos); // [
+    token = scan.raise(source, pos); // [
   }
 
   expect(pos.row).toBe(3);
   expect(pos.column).toBe(0);
   expect(pos.cursor).toBe(source.length);
+});
+
+it('lookahead', () => {
+  const pos = new scan.Position();
+  expect(scan.lookahead("'str'", pos).type).toBe('str');
+  expect(scan.lookahead('=', pos).type).toBe('=');
+  expect(scan.lookahead(' -', pos).type).toBe('space');
+  expect(scan.lookahead(' -', pos, 2).type).toBe('-');
+
+  expect(pos.cursor).toBe(0);
+});
+
+it('expect', () => {
+  expect(scan.expect(['str'], "'str'", new scan.Position())).not.toBeUndefined();
+  expect(() => scan.expect(['-'], '=', new scan.Position())).toThrow();
+  expect(() => scan.expect(['-'], ' -', new scan.Position())).toThrow();
+  expect(() => scan.expect(['-'], '@-', new scan.Position())).toThrow();
 });

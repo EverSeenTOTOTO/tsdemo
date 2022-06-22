@@ -13,7 +13,6 @@
 [= b 2]
 [= c [.. 1 10]]
 [= d [obj 1 [obj 2 3]]]
-[= [.x e, .y.z f] d]
 [= [x] [1 2]]
 [= [. x] [1 2 3]] ; x = 2
 [= [... x] [1 2 3]] ; x = [2 3]
@@ -117,7 +116,7 @@
 ```
 
 ```js 
-[export SimpleQeuue /[watcher, [= interval 300], [.text name]] [begin
+[export SimpleQeuue /[watcher interval name]] [begin
   [= this.watcher watcher]
   [= this.interval interval]
   [= this.name name]
@@ -133,29 +132,29 @@
     [if this.timeoutId [ret]]
     [= this.timeoutId [setTimeout /[] [[this.dispatch] this.interval]]]]
   [= this.dispatch /[] [...]]]]
+
+[= q [SimpleQeuue [watcher 300 'q']]]
 ```
 
 ## BNF
 
 ```bnf
 <lit> ::= <num> | <str> | <bool>
-<unOp> ::= '-' | '!'
-<binOp> ::= '..'
+<unOp> ::= '!' | '...'
+<binOp> ::= '-' | '..' | '/'
 <dot> ::= '.' <id> <dot>
 
-<objExpand> ::= '[' (<dot> <id> ',')* <dot> <id> ']'
-<vecExpandItem> ::= '.' | '...' | <lit> | <id> | <expand>
-<vecExpand> ::= '[' <vecExpandItem>* <vecExpandItem> ']'
+<expandItem> ::= '.' | '...' | <lit> | <id> | <expand>
+<expand> ::= '[' <expandItem>* <expandItem> ']'
 
-<expand> ::= <objExpand> | <vecExpand>
+<func> ::= '/' (<expand> | '['']') <expr>
 
-<func> ::= '/' (<expand> | '['']') <body>
+<assign> ::= '[' '=' (<id> | <expand>) <expr> ']'
 
-<assign> ::= '[' '=' (<id> | <expand>) <body> ']'
+<binOpExpr> ::= '[' <binOp> <expr> <expr> ']'
+<unOpExpr> ::= '[' <unOp> <expr> ']'
 
-<binOpExpr> ::= '[' <binOp> <body> <body> ']'
-<unOpExpr> ::= '[' <unOp> <body> ']'
+<square> ::= '[' <expr>* ']'
 
-<body> ::= <func> | <assign> | <binOpExpr> | <unOpExpr> | <id> | <lit>
-<expr> ::= ('[' <expr> <expr>*']' | <body> | '['']') <dot>*
+<expr> ::= (<func> | <id> | <lit> | <assign> | <binOpExpr> | <unOpExpr> | <square>) <dot>*
 ```
