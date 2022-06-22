@@ -5,12 +5,20 @@ declare let __DEV__: boolean;
 
 declare module '*.macro' {
   const value: any;
-  export default value;
+  export = value;
 }
 
 declare module '*.svelte' {
   const value: any;
-  export default value;
+  export = value;
+}
+
+declare module '@babel/code-frame' {
+  export function codeFrameColumns(
+    input: string,
+    loc: { start: { line: number, column: number }, end?: { line: number, column: number } },
+    options: any
+  ): string;
 }
 
 declare module 'cli-table' {

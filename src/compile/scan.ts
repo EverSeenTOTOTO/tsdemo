@@ -1,32 +1,6 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-constant-condition */
-export class Position {
-  row: number;
-
-  column: number;
-
-  cursor: number;
-
-  constructor(row = 0, column = 0, cursor = 0) {
-    this.row = row;
-    this.column = column;
-    this.cursor = cursor;
-  }
-
-  clone(): Position {
-    return new Position(this.row, this.column, this.cursor);
-  }
-
-  copy(another: Position) {
-    this.row = another.row;
-    this.column = another.column;
-    this.cursor = another.cursor;
-  }
-
-  str() {
-    return JSON.stringify(this);
-  }
-}
+import { Position, codeFrame } from './utils';
 
 export type Token = {
   readonly type: 'space' | 'str' | 'num' | 'bool' | 'id' | 'comment' | 'eof' | '.' | '..' | '...' | ';' | '[' | ']' | '/' | '=' | '!' | '-';
@@ -60,7 +34,7 @@ export function raise(input: string, pos: Position): Token {
   if (/(?:\[|\]|\/|=|!|-)/.test(pivot)) return makeToken(pivot as '=', pos, pivot);
   if (/\s/.test(pivot)) return readWhitespace(input, pos);
 
-  throw new Error(`Lexical error, unrecogonized character: "${pivot}", pos: ${pos.str()}`);
+  throw new Error(codeFrame(input, `Lexical error, unrecogonized character: "${pivot}"`, pos));
 }
 
 const STRING_REGEX = /^'(?:[^'\\\n\r]|\\')*'/;
@@ -71,7 +45,7 @@ export function readString(input: string, pos: Position): Token {
     return makeToken('str', pos, match[0]);
   }
 
-  throw new Error(`Lexical error, expected string, pos: ${pos.str()}`);
+  throw new Error(codeFrame(input, 'Lexical error, expected string', pos));
 }
 
 const NUMBER_REGEX = /^\d+(?:\.\d+)?(?:e\d+)?/;
@@ -82,7 +56,7 @@ export function readNumber(input: string, pos: Position): Token {
     return makeToken('num', pos, match[0]);
   }
 
-  throw new Error(`Lexical error, expected number, pos: ${pos.str()}`);
+  throw new Error(codeFrame(input, 'Lexical error, expected number', pos));
 }
 
 const ID_REGEX = /^[a-zA-Z_][a-zA-Z0-9_]*/;
@@ -98,7 +72,7 @@ export function readIdentifier(input: string, pos: Position): Token {
       : makeToken('id', pos, text);
   }
 
-  throw new Error(`Lexical error, expected identifier, pos: ${pos.str()}`);
+  throw new Error(codeFrame(input, 'Lexical error, expected identifier', pos));
 }
 
 const DOT_REGEX = /^(?:\.\.?\.?)/;
@@ -109,7 +83,7 @@ export function readDot(input: string, pos: Position): Token {
     return makeToken(match[0] as '.', pos, match[0]);
   }
 
-  throw new Error(`Lexical error, expected dot, pos: ${pos.str()}`);
+  throw new Error(codeFrame(input, 'Lexical error, expected dot', pos));
 }
 
 const COMMENT_REGEX = /^;([^;\\\r\n]|\\;)*;?/;
@@ -120,7 +94,7 @@ export function readComment(input: string, pos: Position): Token {
     return makeToken('comment', pos, match[0]);
   }
 
-  throw new Error(`Lexical error, expected comment, pos: ${pos.str()}`);
+  throw new Error(codeFrame(input, 'Lexical error, expected comment', pos));
 }
 
 export function readWhitespace(input: string, pos: Position): Token {
@@ -128,17 +102,17 @@ export function readWhitespace(input: string, pos: Position): Token {
 
   if (/^\r\n/.test(input.slice(pos.cursor))) { // \r\n first
     pos.cursor += 2;
-    pos.row += 1;
+    pos.line += 1;
     pos.column = 0;
   } else if (/ |\t/.test(input[pos.cursor])) {
     pos.cursor++;
     pos.column++;
   } else if (/\n/.test(input[pos.cursor])) {
     pos.cursor += 1;
-    pos.row += 1;
+    pos.line += 1;
     pos.column = 0;
   } else {
-    throw new Error(`Lexical error, expected space, pos: ${pos.str()}`);
+    throw new Error(codeFrame(input, 'Lexical error, expected space', pos));
   }
 
   return { type: 'space', source: input.slice(0, pos.cursor - backup.cursor), pos: backup };
@@ -172,15 +146,16 @@ export function lookahead(input: string, pos: Position, count = 1) {
   return token;
 }
 
-// try read a token, rollback if fail
+// try read expected token, throw if fail
 export function expect(expected: Token['type'] | Token['type'][], input: string, pos: Position) {
   const token = raise(input, pos);
   const types = Array.isArray(expected) ? expected : [expected];
 
   if (types.indexOf(token.type) === -1) {
-    pos.copy(token.pos); // rollback
+    const message = codeFrame(input, `Lexical error, expect "${types.join(',')}", got "${token.type}"`, token.pos, pos);
 
-    throw new Error(`Lexical error, expect "${types.join(',')}", got ${token.type}, pos: ${pos.str()}`);
+    pos.copy(token.pos); // rollback
+    throw new Error(message);
   }
 
   return token;

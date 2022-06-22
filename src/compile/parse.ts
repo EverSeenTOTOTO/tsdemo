@@ -1,6 +1,7 @@
 /* eslint-disable no-constant-condition */
 /* eslint-disable max-classes-per-file */
 import * as scan from './scan';
+import { Position, codeFrame } from './utils';
 
 class Node {
   readonly type: 'Func' | 'Assign' | 'BinOpExpr' | 'UnOpExpr' | 'Id' | 'Lit' | 'Expr' | 'Square' | 'Dot' | 'Expand';
@@ -34,7 +35,7 @@ export class Square extends Node {
 }
 
 export class Expr extends Node {
-  readonly master: Node | Square;
+  readonly master: Node;
 
   readonly dot?: Dot;
 
@@ -74,7 +75,7 @@ export class Expand extends Node {
 
   readonly bracketR: scan.Token;
 
-  readonly items: (scan.Token | Node | Expand)[];
+  readonly items: (scan.Token | Node)[];
 
   constructor(bl: scan.Token, br: scan.Token, items: Expand['items']) {
     super('Expand');
@@ -150,7 +151,7 @@ export class BinOpExpr extends Node {
   }
 }
 
-export function parseExpr(input: string, pos = new scan.Position()): Expr {
+export function parseExpr(input: string, pos = new Position()): Expr {
   scan.skipWhitespace(input, pos);
 
   const next = scan.lookahead(input, pos);
@@ -166,7 +167,7 @@ export function parseExpr(input: string, pos = new scan.Position()): Expr {
   return new Expr(expr, dot.type === '.' ? parseDot(input, pos) : undefined);
 }
 
-function parseSquareExprs(input: string, pos: scan.Position) {
+function parseSquareExprs(input: string, pos: Position) {
   const bl = scan.expect('[', input, pos);
   scan.skipWhitespace(input, pos);
 
@@ -185,13 +186,18 @@ function parseSquareExprs(input: string, pos: scan.Position) {
     case '...':
       children.push(parseUnOpExpr(input, pos));
       break;
-    default: { // [ <expr>* ]
+    default:
+      if (next.type === '/' && scan.lookahead(input, pos, 2).type === 'space') {
+        children.push(parseBinOpExpr(input, pos));
+        break;
+      }
+
       while (next.type !== ']') {
-        children.push(parseExpr(input, pos));
         scan.skipWhitespace(input, pos);
+        children.push(parseExpr(input, pos));
         next = scan.lookahead(input, pos);
       }
-    }
+      break;
   }
 
   scan.skipWhitespace(input, pos);
@@ -200,23 +206,12 @@ function parseSquareExprs(input: string, pos: scan.Position) {
   return new Square(bl, next, children);
 }
 
-function parseOtherExprs(input: string, pos: scan.Position) {
+function parseOtherExprs(input: string, pos: Position) {
   const next = scan.lookahead(input, pos);
 
   switch (next.type) {
-    case '/': {
-      const sibling = scan.lookahead(input, pos, 2);
-
-      if (sibling.type === 'space') {
-        return parseBinOpExpr(input, pos);
-      }
-
-      if (sibling.type === '[') {
-        return parseFunc(input, pos);
-      }
-
-      throw new Error(`Syntax error, expect <space> or "[", got "${sibling.type}", pos: ${pos.str()}`);
-    }
+    case '/':
+      return parseFunc(input, pos);
     case 'id':
       return parseId(input, pos);
     case 'str':
@@ -224,11 +219,11 @@ function parseOtherExprs(input: string, pos: scan.Position) {
     case 'bool':
       return parseLit(input, pos);
     default:
-      throw new Error(`Syntax error, expect <expr>, got "${next.type}", pos: ${next.pos.str()}`);
+      throw new Error(codeFrame(input, `Syntax error, expect <expr>, got "${next.type}"`, pos, next.pos));
   }
 }
 
-export function parseFunc(input: string, pos: scan.Position): Func {
+export function parseFunc(input: string, pos: Position): Func {
   const slash = scan.expect('/', input, pos);
 
   scan.skipWhitespace(input, pos);
@@ -245,7 +240,7 @@ export function parseFunc(input: string, pos: scan.Position): Func {
   return new Func(slash, param, body);
 }
 
-export function parseExpand(input: string, pos: scan.Position) {
+export function parseExpand(input: string, pos: Position) {
   const bl = scan.expect('[', input, pos);
 
   scan.skipWhitespace(input, pos);
@@ -271,7 +266,7 @@ export function parseExpand(input: string, pos: scan.Position) {
         items.push(parseExpand(input, pos));
         break;
       default:
-        throw new Error(`Syntax error, expect <expand>, got "${next.type}", pos: ${next.pos.str()}`);
+        throw new Error(codeFrame(input, `Syntax error, expect <expand>, got "${next.type}"`, pos));
     }
     scan.skipWhitespace(input, pos);
     next = scan.lookahead(input, pos);
@@ -282,7 +277,7 @@ export function parseExpand(input: string, pos: scan.Position) {
   return new Expand(bl, next, items);
 }
 
-export function parseAssign(input: string, pos: scan.Position) {
+export function parseAssign(input: string, pos: Position) {
   const eq = scan.expect('=', input, pos);
 
   scan.skipWhitespace(input, pos);
@@ -293,7 +288,7 @@ export function parseAssign(input: string, pos: scan.Position) {
     ? parseExpand(input, pos)
     : next.type === 'id'
       ? parseId(input, pos)
-      : (() => { throw new Error(`Syntax error, expect <id>, got "${next.type}", pos: ${next.pos.str()}`); })();
+      : (() => { throw new Error(codeFrame(input, `Syntax error, expect <id>, got "${next.type}"`, next.pos)); })();
 
   scan.skipWhitespace(input, pos);
 
@@ -302,19 +297,19 @@ export function parseAssign(input: string, pos: scan.Position) {
   return new Assign(eq, variable, expr);
 }
 
-export function parseId(input: string, pos: scan.Position) {
+export function parseId(input: string, pos: Position) {
   const id = scan.expect('id', input, pos);
 
   return new Id(id);
 }
 
-export function parseLit(input: string, pos: scan.Position) {
+export function parseLit(input: string, pos: Position) {
   const token = scan.expect(['str', 'num', 'bool'], input, pos);
 
   return new Lit(token);
 }
 
-export function parseDot(input: string, pos: scan.Position): Dot {
+export function parseDot(input: string, pos: Position): Dot {
   const dot = scan.expect('.', input, pos);
 
   scan.skipWhitespace(input, pos);
@@ -328,7 +323,7 @@ export function parseDot(input: string, pos: scan.Position): Dot {
   return new Dot(dot, id, nextDot.type === '.' ? parseDot(input, pos) : undefined);
 }
 
-export function parseUnOpExpr(input: string, pos: scan.Position) {
+export function parseUnOpExpr(input: string, pos: Position) {
   const op = scan.expect(['!', '...'], input, pos);
 
   scan.skipWhitespace(input, pos);
@@ -338,7 +333,7 @@ export function parseUnOpExpr(input: string, pos: scan.Position) {
   return new UnOpExpr(op, expr);
 }
 
-export function parseBinOpExpr(input: string, pos: scan.Position) {
+export function parseBinOpExpr(input: string, pos: Position) {
   const op = scan.expect(['-', '..', '/'], input, pos);
 
   scan.skipWhitespace(input, pos);
