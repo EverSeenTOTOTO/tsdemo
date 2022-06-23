@@ -94,7 +94,7 @@ it('parseFunc /[] <expr>', () => {
   const pos = new Position();
   const expr = parse.parseFunc(input, pos);
 
-  expect((expr.param as parse.Square).children.length).toBe(0);
+  expect((expr.param as parse.Call).children.length).toBe(0);
   expect((expr.body.master as parse.Lit).value.source).toBe('2');
 });
 
@@ -161,8 +161,8 @@ it('parseExpr []', () => {
   const pos = new Position();
   const expr = parse.parseExpr(input, pos);
 
-  expect(expr.master.type).toBe('Square');
-  expect((expr.master as parse.Square).isEmpty()).toBe(true);
+  expect(expr.master.type).toBe('Call');
+  expect((expr.master as parse.Call).isEmpty()).toBe(true);
 });
 
 it('parseExpr [x].y.z', () => {
@@ -170,8 +170,18 @@ it('parseExpr [x].y.z', () => {
   const pos = new Position();
   const expr = parse.parseExpr(input, pos);
 
-  expect(expr.master.type).toBe('Square');
-  expect(((expr.master as parse.Square).children[0] as parse.Expr).master?.type).toBe('Id');
+  expect(expr.master.type).toBe('Call');
+  expect(((expr.master as parse.Call).children[0] as parse.Expr).master?.type).toBe('Id');
+  expect(expr.dot?.next?.id.name.source).toBe('z');
+});
+
+it('parseExpr [1 2 3].y.z', () => {
+  const input = '[1 2 3].y.z';
+  const pos = new Position();
+  const expr = parse.parseExpr(input, pos);
+
+  expect(expr.master.type).toBe('Call');
+  expect(((expr.master as parse.Call).children[0] as parse.Expr).master?.type).toBe('Lit');
   expect(expr.dot?.next?.id.name.source).toBe('z');
 });
 
@@ -180,7 +190,7 @@ it('parseExpr "[... [.. x y]]"', () => {
   const pos = new Position();
   const expr = parse.parseExpr(input, pos);
 
-  expect((expr.master as parse.Square).children[0].type).toBe('UnOpExpr');
+  expect((expr.master as parse.Call).children[0].type).toBe('UnOpExpr');
 });
 
 it('parseExpr [/[. x] [.. x y]]', () => {
@@ -188,8 +198,8 @@ it('parseExpr [/[. x] [.. x y]]', () => {
   const pos = new Position();
   const expr = parse.parseExpr(input, pos);
 
-  expect(expr.master.type).toBe('Square');
-  expect((((expr.master as parse.Square).children[0]) as parse.Expr).master.type).toBe('Func');
+  expect(expr.master.type).toBe('Call');
+  expect((((expr.master as parse.Call).children[0]) as parse.Expr).master.type).toBe('Func');
 });
 
 it('parseExpr [/ [... x] [.. x y]]', () => {
@@ -197,19 +207,28 @@ it('parseExpr [/ [... x] [.. x y]]', () => {
   const pos = new Position();
   const expr = parse.parseExpr(input, pos);
 
-  expect(expr.master.type).toBe('Square');
-  expect(((expr.master as parse.Square).children[0])?.type).toBe('BinOpExpr');
+  expect(expr.master.type).toBe('Call');
+  expect(((expr.master as parse.Call).children[0])?.type).toBe('BinOpExpr');
 });
 
-it('parseExpr [/[2 x] [.. x y] [= z 2]]', () => {
-  const input = '[/[2 x] [.. x y] [= z 2]]';
+it('parseExpr [/[] /[] /[] /[] 2]', () => {
+  const input = '[/[] /[] /[] /[] 2]';
   const pos = new Position();
   const expr = parse.parseExpr(input, pos);
-  const square = expr.master as parse.Square;
 
-  expect(square.type).toBe('Square');
-  expect((((expr.master as parse.Square).children[0]) as parse.Expr).master.type).toBe('Func');
-  expect((square.children[1] as parse.Expr)?.master.type).toBe('Square');
+  expect(expr.master.type).toBe('Call');
+  expect(((expr.master as parse.Call).children[0] as parse.Expr)?.master.type).toBe('Func');
+});
+
+it('parseExpr [/[. x] [.. x y] [= z 2]]', () => {
+  const input = '[/[. x] [.. x y] [= z 2]]';
+  const pos = new Position();
+  const expr = parse.parseExpr(input, pos);
+  const square = expr.master as parse.Call;
+
+  expect(square.type).toBe('Call');
+  expect((((expr.master as parse.Call).children[0]) as parse.Expr).master.type).toBe('Func');
+  expect((square.children[1] as parse.Expr)?.master.type).toBe('Call');
 });
 
 it('parseExpr throw', () => {

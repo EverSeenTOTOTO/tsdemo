@@ -3,7 +3,7 @@
 import { Position, codeFrame } from './utils';
 
 export type Token = {
-  readonly type: 'space' | 'str' | 'num' | 'bool' | 'id' | 'comment' | 'eof' | '.' | '..' | '...' | ';' | '[' | ']' | '/' | '=' | '!' | '-';
+  readonly type: 'space' | 'str' | 'num' | 'bool' | 'id' | 'comment' | 'eof' | '.' | '..' | '...' | ';' | '[' | ']' | '/' | '=' | '!' | '-' | '+' | '*' | '>' | '<' | '%' | '^' | '==' | '!=';
   readonly source: string;
   readonly pos: Position;
 };
@@ -31,7 +31,9 @@ export function raise(input: string, pos: Position): Token {
   if (/[0-9]/.test(pivot)) { return readNumber(input, pos); }
   if (/[a-zA-Z_]/.test(pivot)) { return readIdentifier(input, pos); }
   if (/\./.test(pivot)) { return readDot(input, pos); }
-  if (/(?:\[|\]|\/|=|!|-)/.test(pivot)) return makeToken(pivot as '=', pos, pivot);
+  if (/=/.test(pivot)) { return readEq(input, pos); }
+  if (/!/.test(pivot)) { return readNot(input, pos); }
+  if (/\[|\]|\/|-|\+|\*|<|>|\^|%/.test(pivot)) return makeToken(pivot as '.', pos, pivot);
   if (/\s/.test(pivot)) return readWhitespace(input, pos);
 
   throw new Error(codeFrame(input, `Lexical error, unrecogonized character: "${pivot}"`, pos));
@@ -75,7 +77,29 @@ export function readIdentifier(input: string, pos: Position): Token {
   throw new Error(codeFrame(input, 'Lexical error, expected identifier', pos));
 }
 
-const DOT_REGEX = /^(?:\.\.?\.?)/;
+const EQ_REGEX = /^==?/;
+export function readEq(input: string, pos: Position): Token {
+  const match = EQ_REGEX.exec(input.slice(pos.cursor));
+
+  if (match) {
+    return makeToken(match[0] as '.', pos, match[0]);
+  }
+
+  throw new Error(codeFrame(input, 'Lexical error, expected eq', pos));
+}
+
+const NOT_REGEX = /^!=?/;
+export function readNot(input: string, pos: Position): Token {
+  const match = NOT_REGEX.exec(input.slice(pos.cursor));
+
+  if (match) {
+    return makeToken(match[0] as '.', pos, match[0]);
+  }
+
+  throw new Error(codeFrame(input, 'Lexical error, expected not', pos));
+}
+
+const DOT_REGEX = /^\.\.?\.?/;
 export function readDot(input: string, pos: Position): Token {
   const match = DOT_REGEX.exec(input.slice(pos.cursor));
 

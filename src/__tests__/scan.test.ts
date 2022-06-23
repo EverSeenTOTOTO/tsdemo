@@ -73,15 +73,6 @@ it('readIdentifier', () => {
   expect(() => scan.readIdentifier('0_', new Position())).toThrow();
 });
 
-it('readDot', () => {
-  expect(scan.readDot('.', new Position()).source).toBe('.');
-  expect(scan.readDot('..', new Position()).source).toBe('..');
-  expect(scan.readDot('...', new Position()).source).toBe('...');
-  expect(scan.readDot('....', new Position()).source).toBe('...');
-  expect(scan.readDot('.. ..', new Position()).source).toBe('..');
-  expect(() => scan.readDot('\\..', new Position())).toThrow();
-});
-
 it('readComment', () => {
   expect(scan.readComment(';', new Position()).source).toBe(';');
   expect(scan.readComment(';..', new Position()).source).toBe(';..');
