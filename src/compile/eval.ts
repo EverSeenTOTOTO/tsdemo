@@ -38,15 +38,11 @@ export function evalExpr(expr: parse.Expr, input: string, env = new Env()): any 
       value = evalCall(expr.master as parse.Call, input, env);
       break;
     default:
-      throw new Error(`Eval error, expect <expr>, got ${expr.master.type}`);
+      throw new Error(`Eval error, expect <expr>, got ${expr.type}`);
   }
 
   if (expr.dot) {
-    if (typeof value !== 'object' && typeof value !== 'function') {
-      throw new Error(codeFrame(input, `Eval error, call <dot> on ${typeof value}`, expr.dot.dot.pos));
-    } else {
-      value = evalDot(expr.dot, input, env)(value);
-    }
+    value = evalDot(expr.dot, input, env)(value);
   }
 
   return value;
@@ -55,15 +51,34 @@ export function evalExpr(expr: parse.Expr, input: string, env = new Env()): any 
 export function evalCall(expr: parse.Call, input: string, env: Env) {
   if (expr.isEmpty()) return [];
 
-  switch (expr.children[0].type) {
+  const leading = expr.children[0];
+
+  switch (leading.type) {
     case 'BinOpExpr':
-      return evalBinOp(expr.children[0] as parse.BinOpExpr, input, env);
+      return evalBinOp(leading as parse.BinOpExpr, input, env);
     case 'UnOpExpr':
-      return evalUnOp(expr.children[0] as parse.UnOpExpr, input, env);
+      return evalUnOp(leading as parse.UnOpExpr, input, env);
     case 'Assign':
-      return evalAssign(expr.children[0] as parse.Assign, input, env);
+      return evalAssign(leading as parse.Assign, input, env);
     case 'Expr': {
-      const caller = evalExpr(expr.children[0] as parse.Expr, input, env);
+      const { master } = leading as parse.Expr;
+      // plugable
+      if (master.type === 'Id') {
+        switch ((master as parse.Id).name.source) {
+          case 'begin':
+            return evalBegin(expr, input, env);
+          case 'if':
+            return evalIf(expr, input, env);
+          case 'match':
+            return evalMatch(expr, input, env);
+          case 'while':
+            return evalWhile(expr, input, env);
+          default:
+            break;
+        }
+      }
+
+      const caller = evalExpr(leading as parse.Expr, input, env);
       const rest = expr.children.slice(1).map((e) => evalExpr(e as parse.Expr, input, env));
 
       if (typeof caller !== 'function') {
@@ -159,15 +174,15 @@ export function evalAssign(expr: parse.Assign, input: string, env: Env) {
   const value = evalExpr(expr.assignment, input, env);
 
   if (expr.variable.type === 'Id') {
-    const id = expr.variable as parse.Id;
+    const key = (expr.variable as parse.Id).name.source;
 
     if (expr.dot) {
-      const master = env.lookup(id.name.source);
+      const record = env.lookup(key);
 
-      evalDot(expr.dot, input, env)(master, value);
-      env.set(id.name.source, master);
+      evalDot(expr.dot, input, env)(record.value, value);
+      record.env.set(key, record.value);
     } else {
-      env.set(id.name.source, value);
+      env.set(key, value);
     }
   } else {
     evalExpand(expr.variable as parse.Expand, input, env)(...value);
@@ -212,21 +227,60 @@ export function evalBinOp(expr: parse.BinOpExpr, input: string, env: Env) {
   const lhs = evalExpr(expr.lhs, input, env);
   const rhs = evalExpr(expr.rhs, input, env);
 
+  const setLhs = (value: any) => {
+    const { master, dot } = expr.lhs;
+
+    if (master.type === 'Id') {
+      const key = (master as parse.Id).name.source;
+      const record = env.lookup(key);
+
+      if (dot) {
+        evalDot(dot, input, env)(record.value, value);
+      } else {
+        record.value = value;
+      }
+
+      record.env.set(key, record.value);
+    } else {
+      throw new Error(codeFrame(input, `Eval error, cannot assign on ${master.type}`, expr.op.pos));
+    }
+
+    return value;
+  };
+
   switch (expr.op.type) {
     case '+':
       return lhs + rhs;
+    case '+=':
+      return setLhs(lhs + rhs);
     case '-':
       return lhs - rhs;
+    case '-=':
+      return setLhs(lhs - rhs);
     case '*':
       return lhs * rhs;
+    case '*=':
+      return setLhs(lhs * rhs);
     case '/':
       return lhs / rhs;
+    case '/=':
+      return setLhs(lhs / rhs);
     case '>':
       return lhs > rhs;
+    case '>=':
+      return lhs >= rhs;
     case '<':
       return lhs < rhs;
+    case '<=':
+      return lhs <= rhs;
     case '%':
       return lhs % rhs;
+    case '%=':
+      return setLhs(lhs % rhs);
+    case '^':
+      return lhs ** rhs;
+    case '^=':
+      return setLhs(lhs ** rhs);
     case '==':
       return lhs === rhs;
     case '!=':
@@ -246,6 +300,88 @@ export function evalBinOp(expr: parse.BinOpExpr, input: string, env: Env) {
       throw new Error(codeFrame(input, `Eval error, cannot concat ${typeof lhs} and ${typeof rhs}`, expr.op.pos));
     }
     default:
-      throw new Error(codeFrame(input, `Eval error, expect <binOp>, got ${expr.op.type}`, expr.op.pos));
+      throw new Error(codeFrame(input, `Eval error, expect < binOp >, got ${expr.op.type}`, expr.op.pos));
   }
+}
+
+export function evalIf(expr: parse.Call, input: string, env: Env) {
+  const keyword = (expr.children[0] as parse.Expr).master as parse.Id;
+  const cond = expr.children[1] as parse.Expr;
+  const then = expr.children[2] as parse.Expr;
+
+  if (!cond) {
+    throw new Error(codeFrame(input, 'Syntax error, no condition for <if>', keyword.name.pos));
+  }
+
+  if (!then) {
+    throw new Error(codeFrame(input, 'Syntax error, no then statement for <if>', keyword.name.pos));
+  }
+
+  if (expr.children.length > 4) {
+    throw new Error(codeFrame(input, 'Syntax error, extra statements for <if>', keyword.name.pos));
+  }
+
+  const condValue = evalExpr(cond, input, env);
+
+  if (condValue) {
+    return evalExpr(then, input, new Env(env));
+  }
+
+  const el = expr.children[3] as parse.Expr;
+
+  return el && evalExpr(el, input, new Env(env));
+}
+
+export function evalBegin(expr: parse.Call, input: string, env: Env) {
+  const beginEnv = new Env(env);
+  const results: any[] = [];
+
+  for (const e of expr.children.slice(1)) {
+    results.push(evalExpr(e as parse.Expr, input, beginEnv));
+  }
+
+  return results[results.length - 1];
+}
+
+export function evalWhile(expr: parse.Call, input: string, env: Env) {
+  const keyword = (expr.children[0] as parse.Expr).master as parse.Id;
+  const cond = expr.children[1] as parse.Expr;
+
+  if (!cond) {
+    throw new Error(codeFrame(input, 'Syntax error, no condition for <while>', keyword.name.pos));
+  }
+
+  const rest = expr.children.slice(2);
+
+  while (evalExpr(cond, input, env)) {
+    rest.forEach((e) => evalExpr(e as parse.Expr, input, env));
+  }
+}
+
+export function evalMatch(expr: parse.Call, input: string, env: Env) {
+  const keyword = (expr.children[0] as parse.Expr).master as parse.Id;
+  const value = evalExpr(expr.children[1] as parse.Expr, input, env);
+
+  if (!value) {
+    throw new Error(codeFrame(input, 'Syntax error, no value to <match>', keyword.name.pos));
+  }
+
+  let rest = expr.children.slice(2);
+
+  while (rest.length > 0) {
+    if (rest[0].type !== 'Expr') {
+      throw new Error(codeFrame(input, `Syntax error, expect pattern <expr>, got ${rest[0].type}`, keyword.name.pos));
+    }
+
+    const [pattern, action] = ((rest[0] as parse.Expr).master as parse.Call).children;
+    const pvalue = evalExpr(pattern as parse.Expr, input, env);
+
+    if (value === pvalue) {
+      return action && evalExpr(action as parse.Expr, input, env);
+    }
+
+    rest = rest.slice(1);
+  }
+
+  return undefined;
 }

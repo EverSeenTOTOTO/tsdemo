@@ -1,5 +1,6 @@
 import path from 'path';
-import { parse, evaluate } from '@/compile/';
+import { parse, evaluate, setupJsGlobal } from '@/compile/';
+import { Env } from '@/compile/eval';
 
 it('parse 1', () => {
   const input = `
@@ -145,7 +146,8 @@ it('evaluate 2', () => {
 [[require 'os'].cpus].length
 `;
 
-  const { result } = evaluate(code);
+  const env = new Env();
+  const { result } = evaluate(code, setupJsGlobal(env));
 
   expect(result).toEqual([
     undefined,
@@ -162,10 +164,87 @@ it('evaluate 3', async () => {
   const code = `
 [[import 'path'].then /[path] [path.resolve '.']]
 `;
-
-  const result = await Promise.all(evaluate(code).result);
+  const env = new Env();
+  const result = await Promise.all(evaluate(code, setupJsGlobal(env)).result);
 
   expect(result).toEqual([
     path.resolve('.'),
   ]);
+});
+
+it('evaluate 4', () => {
+  const code = `
+[if true true false]
+[if false true false]
+[if false any]
+`;
+  const { result } = evaluate(code);
+
+  expect(result).toEqual([
+    true,
+    false,
+    undefined,
+  ]);
+
+  expect(() => evaluate('[if ]')).toThrow();
+  expect(() => evaluate('[if true]')).toThrow();
+  expect(() => evaluate('[if true true false extra]')).toThrow();
+});
+
+it('evaluate 5', () => {
+  const code = `
+[begin 1 2]
+[begin [= x 1] [= y 2] [begin [+ x y]]]
+`;
+  const { result } = evaluate(code);
+
+  expect(result).toEqual([
+    2,
+    3,
+  ]);
+});
+
+it('evaluate 6', () => {
+  const code = `
+[begin [= i 1] [while [< i 4] [+= i 1]] i]
+`;
+  const { result } = evaluate(code);
+
+  expect(result).toEqual([4]);
+});
+
+it('evaluate 7', () => {
+  const code = `
+[match true]
+[begin 
+  [= x 2]
+  [match x
+    [1 1]
+    [2 2]]]
+[begin 
+  [= y 'str']
+  [match y
+    ['s' 's']
+    [[/[] 'st'] 'st']]]
+`;
+
+  const { result } = evaluate(code);
+
+  expect(result).toEqual([undefined, 2, undefined]);
+});
+
+it('evaluate 8', () => {
+  const code = `
+[= o [Object]]
+[= o.a 1]
+[= o.b o]
+[= o.b.c 2]
+[^= o.c o.c]
+
+[o.a o.c]
+`;
+
+  const { result } = evaluate(code, setupJsGlobal(new Env()));
+
+  expect(result[result.length - 1]).toEqual([1, 4]);
 });

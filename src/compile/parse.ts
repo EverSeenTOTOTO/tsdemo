@@ -180,10 +180,21 @@ function parseCallExprs(input: string, pos: Position) {
   switch (next.type) {
     case '..':
     case '-':
+    case '-=':
     case '+':
+    case '+=':
+    case '/':
+    case '/=':
     case '*':
+    case '*=':
     case '>':
+    case '>=':
     case '<':
+    case '<=':
+    case '^':
+    case '^=':
+    case '%':
+    case '%=':
     case '==':
     case '!=':
       children.push(parseBinOpExpr(input, pos));
@@ -195,15 +206,6 @@ function parseCallExprs(input: string, pos: Position) {
       children.push(parseUnOpExpr(input, pos));
       break;
     default:
-      if (next.type === '/') {
-        const sibling = scan.lookahead(input, pos, 2);
-
-        if (sibling.type === 'space') { // [/ [x] y]
-          children.push(parseBinOpExpr(input, pos));
-          break;
-        } // else [/[x] y z ...]
-      }
-
       while (next.type !== ']') {
         scan.skipWhitespace(input, pos);
         children.push(parseExpr(input, pos));
@@ -221,7 +223,7 @@ function parseOtherExprs(input: string, pos: Position) {
   const next = scan.lookahead(input, pos);
 
   switch (next.type) {
-    case '/':
+    case '/[':
       return parseFunc(input, pos);
     case 'id':
       return parseId(input, pos);
@@ -235,7 +237,7 @@ function parseOtherExprs(input: string, pos: Position) {
 }
 
 export function parseFunc(input: string, pos: Position): Func {
-  const slash = scan.expect('/', input, pos);
+  const slash = scan.makeToken('/', pos, '/'); // left [ to parseExpand
 
   scan.skipWhitespace(input, pos);
 

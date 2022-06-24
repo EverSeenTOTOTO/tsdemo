@@ -17,15 +17,24 @@ it('evalLit', () => {
 });
 
 it('evalBinOp', () => {
-  const add = '+ 1 2';
-  const sub = '- 1 2';
-  const mul = '* 1 2';
-  const div = '/ 1 2';
-  const lt = '< 1 2';
-  const gt = '> 1 2';
-  const mod = '% 1 2';
-  const eq = '== 1 2';
-  const ne = '!= 1 2';
+  const add = '+ x 2';
+  const sub = '- x 2';
+  const mul = '* x 2';
+  const div = '/ x 2';
+  const lt = '< x 2';
+  const gt = '> x 2';
+  const mod = '% x 2';
+  const hat = '^ x 2';
+  const addEq = '+= x 2';
+  const subEq = '-= x 2';
+  const mulEq = '*= x 2';
+  const divEq = '/= x 2';
+  const le = '<= x 2';
+  const ge = '>= x 2';
+  const eq = '== x 2';
+  const ne = '!= x 2';
+  const modEq = '%= x 2';
+  const hatEq = '^= x 2';
   const concatStr = ".. 'str' 'ing'";
   const concatNum = '.. 4 1';
   const concatNum2 = '.. 1 4';
@@ -33,16 +42,34 @@ it('evalBinOp', () => {
   const concatError = '.. 1 [1]';
 
   const ep = factory(parse.parseBinOpExpr, ev.evalBinOp);
+  const env = new ev.Env();
 
-  expect(ep(add)).toBe(3);
-  expect(ep(sub)).toBe(-1);
-  expect(ep(mul)).toBe(2);
-  expect(ep(div)).toBe(0.5);
-  expect(ep(lt)).toBe(true);
-  expect(ep(gt)).toBe(false);
-  expect(ep(mod)).toBe(1);
-  expect(ep(eq)).toBe(false);
-  expect(ep(ne)).toBe(true);
+  env.set('x', 1);
+
+  expect(ep(add, env)).toBe(3);
+  expect(ep(sub, env)).toBe(-1);
+  expect(ep(mul, env)).toBe(2);
+  expect(ep(div, env)).toBe(0.5);
+  expect(ep(mod, env)).toBe(1);
+  expect(ep(hat, env)).toBe(1);
+  expect(ep(lt, env)).toBe(true);
+  expect(ep(gt, env)).toBe(false);
+  expect(ep(eq, env)).toBe(false);
+  expect(ep(ne, env)).toBe(true);
+  expect(ep(le, env)).toBe(true);
+  expect(ep(ge, env)).toBe(false);
+  env.set('x', 1);
+  expect(ep(addEq, env)).toBe(3);
+  env.set('x', 1);
+  expect(ep(subEq, env)).toBe(-1);
+  env.set('x', 1);
+  expect(ep(mulEq, env)).toBe(2);
+  env.set('x', 1);
+  expect(ep(divEq, env)).toBe(0.5);
+  env.set('x', 1);
+  expect(ep(modEq, env)).toBe(1);
+  env.set('x', 1);
+  expect(ep(hatEq, env)).toBe(1);
   expect(ep(concatStr)).toBe('string');
   expect(ep(concatNum)).toEqual([4, 3, 2]);
   expect(ep(concatNum2)).toEqual([1, 2, 3]);

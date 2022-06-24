@@ -23,6 +23,9 @@ web:
 start: build
 	node ${DIST}/index.js
 
+sq:
+	node ${DIST}/index.js script.sq
+
 watch:
 	npx nodemon --config nodemon.json
 
@@ -32,4 +35,4 @@ test:
 debug:
 	node --inspect-brk node_modules/jest/bin/jest.js --coverage --runInBand
 
-.PHONY: lint clean build start test watch debug web
+.PHONY: lint clean build start test watch debug web sq

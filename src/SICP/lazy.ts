@@ -5,8 +5,8 @@ import { memo } from './stream';
 export const cons = <T, U>(x: T, g: () => U) => (f: (x: T, y: () => U) => any) => f(x, memo(g));
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const car = (pair: ReturnType<typeof cons>) => pair((x, g) => x);
-export const cdr = (pair: ReturnType<typeof cons>) => pair((x, g) => g());
+export const car = (pair: ReturnType<typeof cons>) => pair((x, _g) => x);
+export const cdr = (pair: ReturnType<typeof cons>) => pair((_x, g) => g());
 
 export const list_filter = <T>(s: any, f: (x: T) => boolean): any => {
   return f(car(s))
