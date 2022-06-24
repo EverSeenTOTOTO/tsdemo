@@ -93,44 +93,6 @@ it('readWhitespace', () => {
   expect(() => scan.readWhitespace('\\n', new Position())).toThrow();
 });
 
-it('raise', () => {
-  const source = `
-[export SimpleQeuue/[watcher [= interval 300] [= name 'q']]
-  [dispatch/[] [...]]
-`;
-  const pos = new Position();
-
-  scan.skipWhitespace(source, pos);
-
-  expect(pos.line).toBe(1);
-  expect(pos.column).toBe(0);
-  expect(pos.cursor).toBe(1);
-
-  expect(scan.raise(source, pos).source).toBe('[');
-
-  scan.skipWhitespace(source, pos);
-  expect(scan.raise(source, pos).source).toBe('export');
-
-  scan.skipWhitespace(source, pos);
-
-  let token = scan.raise(source, pos);
-
-  expect(token.source).toBe('SimpleQeuue');
-  expect(token.pos.column).toBe(8);
-  expect(token.pos.cursor).toBe(9);
-  expect(pos.column).toBe(19);
-  expect(pos.cursor).toBe(20);
-
-  while (token.type !== 'eof') {
-    scan.skipWhitespace(source, pos);
-    token = scan.raise(source, pos); // [
-  }
-
-  expect(pos.line).toBe(3);
-  expect(pos.column).toBe(0);
-  expect(pos.cursor).toBe(source.length);
-});
-
 it('lookahead', () => {
   const pos = new Position();
   expect(scan.lookahead("'str'", pos).type).toBe('str');

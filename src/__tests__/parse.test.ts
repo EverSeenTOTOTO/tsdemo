@@ -11,8 +11,8 @@ it('parseBinOpExpr', () => {
   expect((expr.rhs.master as parse.Id).name.source).toBe('b');
 });
 
-it('parseBinOpExpr', () => {
-  const input = '... a b';
+it('parseUnOpExpr', () => {
+  const input = '! a';
   const pos = new Position();
   const expr = parse.parseUnOpExpr(input, pos);
 
@@ -185,8 +185,8 @@ it('parseExpr [1 2 3].y.z', () => {
   expect(expr.dot?.next?.id.name.source).toBe('z');
 });
 
-it('parseExpr "[... [.. x y]]"', () => {
-  const input = '[... [.. x y]]';
+it('parseExpr "[! [.. x y]]"', () => {
+  const input = '[! [.. x y]]';
   const pos = new Position();
   const expr = parse.parseExpr(input, pos);
 
@@ -202,8 +202,8 @@ it('parseExpr [/[. x] [.. x y]]', () => {
   expect((((expr.master as parse.Call).children[0]) as parse.Expr).master.type).toBe('Func');
 });
 
-it('parseExpr [/ [... x] [.. x y]]', () => {
-  const input = '[/ [... x] [.. x y]]';
+it('parseExpr [/ [! x] [.. x y]]', () => {
+  const input = '[/ [! x] [.. x y]]';
   const pos = new Position();
   const expr = parse.parseExpr(input, pos);
 

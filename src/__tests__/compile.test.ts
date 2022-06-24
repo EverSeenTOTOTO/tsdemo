@@ -1,4 +1,4 @@
-import { parse } from '@/compile/';
+import { parse, evaluate } from '@/compile/';
 
 it('parse 1', () => {
   const input = `
@@ -24,7 +24,7 @@ it('parse 3', () => {
 [= fib /[n]   
   [match n 
     [[in 0 1] 1]
-    [... [+ 
+    [! [+ 
       [fib [- n 1]] 
       [fib [- n 2]]]]]]
         `;
@@ -111,4 +111,38 @@ it('parse 6', () => {
 [o.log]
     `;
   expect(() => parse(input)).not.toThrow();
+});
+
+it('evaluate 1', () => {
+  const code = `[= a 'foo']
+  [= b 2]
+  [= c [.. 1 10]]
+  [= [. [x] y] [1 [2] 3]]
+  `;
+
+  const { env } = evaluate(code);
+
+  expect(env.get('a')).toBe('foo');
+  expect(env.get('b')).toBe(2);
+  expect(env.get('c')).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  expect(env.get('x')).toBe(2);
+  expect(env.get('y')).toBe(3);
+});
+
+it('evaluate 2', () => {
+  const code = `
+[process.cwd]
+
+[/[] process.arch]
+
+[console.log [/[] process].argv]
+`;
+
+  const { result } = evaluate(code);
+
+  expect(result).toEqual([
+    process.cwd(),
+    process.arch,
+    undefined,
+  ]);
 });

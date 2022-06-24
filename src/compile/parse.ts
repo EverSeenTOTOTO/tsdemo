@@ -192,7 +192,6 @@ function parseCallExprs(input: string, pos: Position) {
       children.push(parseAssign(input, pos));
       break;
     case '!':
-    case '...':
       children.push(parseUnOpExpr(input, pos));
       break;
     default:
@@ -231,7 +230,7 @@ function parseOtherExprs(input: string, pos: Position) {
     case 'bool':
       return parseLit(input, pos);
     default:
-      throw new Error(codeFrame(input, `Syntax error, expect <expr>, got "${next.type}"`, pos, next.pos));
+      throw new Error(codeFrame(input, `Syntax error, expect <expr>, got ${next.type}`, pos, next.pos));
   }
 }
 
@@ -273,7 +272,7 @@ export function parseExpand(input: string, pos: Position) {
         items.push(parseExpand(input, pos));
         break;
       default:
-        throw new Error(codeFrame(input, `Syntax error, expect <expand>, got "${next.type}"`, pos));
+        throw new Error(codeFrame(input, `Syntax error, expect <expand>, got ${next.type}`, pos));
     }
     scan.skipWhitespace(input, pos);
     next = scan.lookahead(input, pos);

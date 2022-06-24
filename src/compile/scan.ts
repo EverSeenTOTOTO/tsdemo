@@ -36,7 +36,7 @@ export function raise(input: string, pos: Position): Token {
   if (/\[|\]|\/|-|\+|\*|<|>|\^|%/.test(pivot)) return makeToken(pivot as '.', pos, pivot);
   if (/\s/.test(pivot)) return readWhitespace(input, pos);
 
-  throw new Error(codeFrame(input, `Lexical error, unrecogonized character: "${pivot}"`, pos));
+  throw new Error(codeFrame(input, `Syntax error, unrecogonized character: ${pivot}`, pos));
 }
 
 const STRING_REGEX = /^'(?:[^'\\\n\r]|\\')*'/;
@@ -47,7 +47,7 @@ export function readString(input: string, pos: Position): Token {
     return makeToken('str', pos, match[0]);
   }
 
-  throw new Error(codeFrame(input, 'Lexical error, expected string', pos));
+  throw new Error(codeFrame(input, 'Syntax error, expected <string>', pos));
 }
 
 const NUMBER_REGEX = /^\d+(?:\.\d+)?(?:e\d+)?/;
@@ -58,7 +58,7 @@ export function readNumber(input: string, pos: Position): Token {
     return makeToken('num', pos, match[0]);
   }
 
-  throw new Error(codeFrame(input, 'Lexical error, expected number', pos));
+  throw new Error(codeFrame(input, 'Syntax error, expected <number>', pos));
 }
 
 const ID_REGEX = /^[a-zA-Z_][a-zA-Z0-9_]*/;
@@ -74,7 +74,7 @@ export function readIdentifier(input: string, pos: Position): Token {
       : makeToken('id', pos, text);
   }
 
-  throw new Error(codeFrame(input, 'Lexical error, expected identifier', pos));
+  throw new Error(codeFrame(input, 'Syntax error, expected <identifier>', pos));
 }
 
 const EQ_REGEX = /^==?/;
@@ -85,7 +85,7 @@ export function readEq(input: string, pos: Position): Token {
     return makeToken(match[0] as '.', pos, match[0]);
   }
 
-  throw new Error(codeFrame(input, 'Lexical error, expected eq', pos));
+  throw new Error(codeFrame(input, 'Syntax error, expected <eq>', pos));
 }
 
 const NOT_REGEX = /^!=?/;
@@ -96,7 +96,7 @@ export function readNot(input: string, pos: Position): Token {
     return makeToken(match[0] as '.', pos, match[0]);
   }
 
-  throw new Error(codeFrame(input, 'Lexical error, expected not', pos));
+  throw new Error(codeFrame(input, 'Syntax error, expected <not>', pos));
 }
 
 const DOT_REGEX = /^\.\.?\.?/;
@@ -107,7 +107,7 @@ export function readDot(input: string, pos: Position): Token {
     return makeToken(match[0] as '.', pos, match[0]);
   }
 
-  throw new Error(codeFrame(input, 'Lexical error, expected dot', pos));
+  throw new Error(codeFrame(input, 'Syntax error, expected <dot>', pos));
 }
 
 const COMMENT_REGEX = /^;([^;\\\r\n]|\\;)*;?/;
@@ -118,7 +118,7 @@ export function readComment(input: string, pos: Position): Token {
     return makeToken('comment', pos, match[0]);
   }
 
-  throw new Error(codeFrame(input, 'Lexical error, expected comment', pos));
+  throw new Error(codeFrame(input, 'Syntax error, expected <comment>', pos));
 }
 
 export function readWhitespace(input: string, pos: Position): Token {
@@ -136,7 +136,7 @@ export function readWhitespace(input: string, pos: Position): Token {
     pos.line += 1;
     pos.column = 0;
   } else {
-    throw new Error(codeFrame(input, 'Lexical error, expected space', pos));
+    throw new Error(codeFrame(input, 'Syntax error, expected <space>', pos));
   }
 
   return { type: 'space', source: input.slice(0, pos.cursor - backup.cursor), pos: backup };
@@ -176,7 +176,7 @@ export function expect(expected: Token['type'] | Token['type'][], input: string,
   const types = Array.isArray(expected) ? expected : [expected];
 
   if (types.indexOf(token.type) === -1) {
-    const message = codeFrame(input, `Lexical error, expect "${types.join(',')}", got "${token.type}"`, token.pos, pos);
+    const message = codeFrame(input, `Syntax error, expect "${types.join(',')}", got ${token.type}`, token.pos, pos);
 
     pos.copy(token.pos); // rollback
     throw new Error(message);
