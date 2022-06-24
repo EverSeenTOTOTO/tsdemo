@@ -1,3 +1,4 @@
+import path from 'path';
 import { parse, evaluate } from '@/compile/';
 
 it('parse 1', () => {
@@ -131,18 +132,40 @@ it('evaluate 1', () => {
 
 it('evaluate 2', () => {
   const code = `
+[= foo /[x y] [== x y]]
+
+[foo 1 2]
+
 [process.cwd]
 
 [/[] process.arch]
 
 [console.log [/[] process].argv]
+
+[[require 'os'].cpus].length
 `;
 
   const { result } = evaluate(code);
 
   expect(result).toEqual([
+    undefined,
+    false,
     process.cwd(),
     process.arch,
     undefined,
+    // eslint-disable-next-line global-require, @typescript-eslint/no-var-requires
+    require('os').cpus().length,
+  ]);
+});
+
+it('evaluate 3', async () => {
+  const code = `
+[[import 'path'].then /[path] [path.resolve '.']]
+`;
+
+  const result = await Promise.all(evaluate(code).result);
+
+  expect(result).toEqual([
+    path.resolve('.'),
   ]);
 });

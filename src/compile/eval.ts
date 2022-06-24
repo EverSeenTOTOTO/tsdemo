@@ -42,7 +42,7 @@ export function evalExpr(expr: parse.Expr, input: string, env = new Env()): any 
   }
 
   if (expr.dot) {
-    if (typeof value !== 'object') {
+    if (typeof value !== 'object' && typeof value !== 'function') {
       throw new Error(codeFrame(input, `Eval error, call <dot> on ${typeof value}`, expr.dot.dot.pos));
     } else {
       value = evalDot(expr.dot, input, env)(value);
@@ -70,7 +70,7 @@ export function evalCall(expr: parse.Call, input: string, env: Env) {
         return [caller, ...rest];
       }
 
-      return caller(rest);
+      return caller(...rest);
     }
     default:
       throw new Error(codeFrame(input, `Eval error, expect <call>, got ${expr.children[0].type}`, expr.bracketL.pos));
@@ -85,7 +85,9 @@ export function evalDot(expr: parse.Dot, input: string, _env: Env) {
     let ptr = expr;
 
     while (typeof obj === 'object' && obj !== null && ptr.next) {
-      obj = obj[ptr.id.name.source];
+      const child = obj[ptr.id.name.source];
+
+      obj = typeof child === 'function' ? child.bind(obj) : child;
       key += `.${ptr.id.name.source}`;
       ptr = ptr.next;
     }
@@ -99,17 +101,19 @@ export function evalDot(expr: parse.Dot, input: string, _env: Env) {
       return value;
     }
 
-    return obj[ptr.id.name.source];
+    const result = obj[ptr.id.name.source];
+
+    return typeof result === 'function' ? result.bind(obj) : result;
   };
 }
 
 export function evalExpand(expr: parse.Expand, input: string, env: Env) {
-  return (value: any[]) => {
+  return (...value: any[]) => {
     let cursor = 0;
 
     expr.items.forEach((item, idx) => {
       if (cursor >= value.length) {
-        throw new Error(codeFrame(input, `Eval error, no enough expand items, index: ${cursor}, arguments length: ${value.length}`, expr.bracketL.pos));
+        throw new Error(codeFrame(input, `Eval error, expect ${cursor + 1} arguments, got: ${value.length}`, expr.bracketL.pos));
       }
 
       switch (item.type) {
@@ -121,7 +125,7 @@ export function evalExpand(expr: parse.Expand, input: string, env: Env) {
           const newCursor = value.length - (expr.items.length - idx - 1) + count;
 
           if (newCursor < cursor) {
-            throw new Error(codeFrame(input, `Eval error, no enough expand items, index: ${cursor}, arguments length: ${value.length}`, expr.bracketL.pos));
+            throw new Error(codeFrame(input, `Eval error, expect ${cursor + 1} arguments, got: ${value.length}`, expr.bracketL.pos));
           }
 
           cursor = newCursor;
@@ -130,7 +134,7 @@ export function evalExpand(expr: parse.Expand, input: string, env: Env) {
           env.set((item as parse.Id).name.source, value[cursor++]);
           break;
         case 'Expand':
-          evalExpand(item as parse.Expand, input, env)(value[cursor++]);
+          evalExpand(item as parse.Expand, input, env)(...value[cursor++]);
           break;
         default:
           throw new Error(codeFrame(input, `Eval error, expect <expand>, got ${item.type}`, expr.bracketL.pos));
@@ -140,11 +144,11 @@ export function evalExpand(expr: parse.Expand, input: string, env: Env) {
 }
 
 export function evalFunc(expr: parse.Func, input: string, env: Env) {
-  return (params: any[]) => {
+  return (...params: any[]) => {
     const bodyEnv = new Env(env);
 
     if (expr.param.type === 'Expand') {
-      evalExpand(expr.param as parse.Expand, input, bodyEnv)(params);
+      evalExpand(expr.param as parse.Expand, input, bodyEnv)(...params);
     }// else expect no arguments
 
     return evalExpr(expr.body, input, bodyEnv);
@@ -166,7 +170,7 @@ export function evalAssign(expr: parse.Assign, input: string, env: Env) {
       env.set(id.name.source, value);
     }
   } else {
-    evalExpand(expr.variable as parse.Expand, input, env)(value);
+    evalExpand(expr.variable as parse.Expand, input, env)(...value);
   }
 }
 

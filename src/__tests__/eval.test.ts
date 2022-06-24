@@ -99,57 +99,57 @@ it('evalExpand', () => {
   const ep = factory(parse.parseExpand, ev.evalExpand);
   const env = new ev.Env();
 
-  ep('[x]', env)([1]);
+  ep('[x]', env)(1);
   expect(env.get('x')).toBe(1);
 
-  ep('[. x]', env)([1, 2]);
+  ep('[. x]', env)(1, 2);
   expect(env.get('x')).toBe(2);
 
-  ep('[... x]', env)([1, 2, 3, 4]);
+  ep('[... x]', env)(1, 2, 3, 4);
   expect(env.get('x')).toBe(4);
 
-  ep('[... . . x]', env)([1, 2, 3, 4]);
+  ep('[... . . x]', env)(1, 2, 3, 4);
   expect(env.get('x')).toBe(4);
 
-  ep('[... x . .]', env)([1, 2, 3, 4]);
+  ep('[... x . .]', env)(1, 2, 3, 4);
   expect(env.get('x')).toBe(2);
 
-  ep('[... [. x] . .]', env)([1, ['ign', 2], 3, 4]);
+  ep('[... [. x] . .]', env)(1, ['ign', 2], 3, 4);
   expect(env.get('x')).toBe(2);
 
-  ep('[... [[[[x]]]] . .]', env)([1, [[[[2]]]], 3, 4]);
+  ep('[... [[[[x]]]] . .]', env)(1, [[[[2]]]], 3, 4);
   expect(env.get('x')).toBe(2);
 
-  ep('[. x . y]', env)([1, 2, 3, 4]);
+  ep('[. x . y]', env)(1, 2, 3, 4);
   expect(env.get('x')).toBe(2);
   expect(env.get('y')).toBe(4);
 
-  ep('[... . . x y]', env)([1, 2, 3, 4]);
+  ep('[... . . x y]', env)(1, 2, 3, 4);
   expect(env.get('x')).toBe(3);
   expect(env.get('y')).toBe(4);
 
-  ep('[... x y .]', env)([1, 2, 3, 4, 5]);
+  ep('[... x y .]', env)(1, 2, 3, 4, 5);
   expect(env.get('x')).toBe(3);
   expect(env.get('y')).toBe(4);
 
-  ep('[x . ... y ... . z]', env)([1, 2, 3, 4, 5, 6]);
+  ep('[x . ... y ... . z]', env)(1, 2, 3, 4, 5, 6);
   expect(env.get('x')).toBe(1);
   expect(env.get('y')).toBe(4);
   expect(env.get('z')).toBe(6);
 
-  ep('[. x . ... y ... . z .]', env)([1, 2, 3, 4, 5, 6, 7]);
+  ep('[. x . ... y ... . z .]', env)(1, 2, 3, 4, 5, 6, 7);
   expect(env.get('x')).toBe(2);
   expect(env.get('y')).toBe(4);
   expect(env.get('z')).toBe(6);
 
-  ep('[. x . ... [y] ... [. z .]]', env)([1, 2, 3, [4], [5, 6, 7]]);
+  ep('[. x . ... [y] ... [. z .]]', env)(1, 2, 3, [4], [5, 6, 7]);
   expect(env.get('x')).toBe(2);
   expect(env.get('y')).toBe(4);
   expect(env.get('z')).toBe(6);
 
-  expect(() => ep('[... x]')([])).toThrow();
-  expect(() => ep('[. . x]')([1, 2])).toThrow();
-  expect(() => ep('[x . .]')([1, 2])).toThrow();
+  expect(() => ep('[... x]')()).toThrow();
+  expect(() => ep('[. . x]')(1, 2)).toThrow();
+  expect(() => ep('[x . .]')(1, 2)).toThrow();
 });
 
 it('evalFunc', () => {
@@ -162,8 +162,11 @@ it('evalFunc', () => {
   const ep = factory(parse.parseFunc, ev.evalFunc);
 
   expect(ep('/[] 2')()).toBe(2);
-  expect(ep('/[x] x')([2])).toBe(2);
-  expect(ep('/[. x] x')([1, 2])).toBe(2);
+  expect(ep('/[x] x')(2)).toBe(2);
+  expect(ep('/[. x] x')(1, 2)).toBe(2);
   expect(ep('/[] [+ z x]', env)()).toBe(6);
-  expect(ep('/[] /[] /[] /[y] [+ [+ z x] y]', env)()()()([1])).toBe(7);
+  expect(ep('/[] /[] /[] /[y] [+ [+ z x] y]', env)()()()(1)).toBe(7);
+  expect(ep('/[x] /[y] /[z] [+ [+ z x] y]', env)(1)(2)(3)).toBe(6);
+  expect(ep('/[x] /[y] /[] [+ [+ z x] y]', env)(1)(2)()).toBe(7);
+  expect(() => ep('/[x] /[y] /[z] [+ [+ z x] y]', env)(1)(2)()).toThrow();
 });

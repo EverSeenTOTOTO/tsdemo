@@ -22,5 +22,9 @@ export const evaluate = (input: string, pos = new Position()) => {
     env.set(key, globalThis[key]);
   }
 
+  env.set('import', (pkg: string) => import(pkg));
+  // eslint-disable-next-line import/no-dynamic-require, global-require
+  env.set('require', (pkg: string) => require(pkg));
+
   return { result: parse(input, pos).map((e) => evalExpr(e, input, env)), env };
 };
