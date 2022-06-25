@@ -57,15 +57,18 @@
 ## 数据结构
 
 ```js
-[= stack /[vec] [begin
-  [= this.vec vec]
+[= stack /[vec] [begin 
+  [= this [Object]]
+  [= this.vec [... vec]]
   [= this.clear /[] [= this.vec []]]
-  [= this.push /[x] [= this.vec [.. this.vec [x]]]]
+  [= this.push /[x] [begin 
+    [= this.vec [.. this.vec [x]]]]]
   [= this.pop /[] [begin
-    ; line comment
-    [= [... x] ;inline comment; this.vec]
-    [splice this.vec [- [this.vec.len] 1] 1]
-    x]]]]
+    [= [... x] this.vec]
+    [this.vec.splice [- this.vec.length 1] 1]
+    x]]
+  this]]
+
 
 [= s [stack [1 2 3]]]
 [s.push 2]
@@ -75,11 +78,6 @@
 [= v [.. v [2]]]
 [map v /[x] [+ x 1]]
 [map v /[x idx] [+ x idx]]
-
-[= obj /[a b] [begin
-  [= this.a a]
-  [= this.b b]
-  [log /[] [log this.b]]]]
 
 ; line comment
 [= o [obj 1 [obj 2 3]]]
@@ -114,27 +112,6 @@
       [open 'http://localhost:' port]
     ]]]
 [program.catch /[e] [console.error e.stack]]
-```
-
-```js 
-[export SimpleQeuue /[watcher interval name] [begin
-  [= this.watcher watcher]
-  [= this.interval interval]
-  [= this.name name]
-  [= this.queue []]
-  [= this.enque /[e] [begin
-    [match e.type 
-      [== 'jump' [= this.queue [vec e]]]
-      [== 'refresh' [begin 
-        [= this.queue [this.queue.filter /[each] [!= each.type e.type]]]
-        [this.queue.push e]]]]
-    [this.notify]]]
-  [= this.notify /[] [begin
-    [if this.timeoutId [ret]]
-    [= this.timeoutId [setTimeout /[] [[this.dispatch] this.interval]]]]]
-  [= this.dispatch /[] []]]]
-
-[= q [SimpleQeuue [watcher 300 'q']]]
 ```
 
 ## BNF

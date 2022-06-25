@@ -3,17 +3,20 @@ import * as parse from './parse';
 import { codeFrame } from './utils';
 
 export class Env extends Map<string, unknown> {
+  type?: string;
+
   parent?: Env;
 
-  constructor(parent?: Env) {
+  constructor(parent?: Env, type?: string) {
     super();
     this.parent = parent;
+    this.type = type;
   }
 
   lookup(variable: string): { value: any, env: Env } {
     const value = this.get(variable);
 
-    if (!value && this.parent) {
+    if (value === undefined && this.parent) {
       return this.parent.lookup(variable);
     }
 
@@ -95,19 +98,19 @@ export function evalCall(expr: parse.Call, input: string, env: Env) {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function evalDot(expr: parse.Dot, input: string, _env: Env) {
   return (master: any, value?: any) => {
-    let key = '';
     let obj = master;
     let ptr = expr;
+    let key = ptr.id.name.source;
 
-    while (typeof obj === 'object' && obj !== null && ptr.next) {
+    while (Object(obj) === obj && obj !== null && ptr.next) {
       const child = obj[ptr.id.name.source];
 
       obj = typeof child === 'function' ? child.bind(obj) : child;
-      key += `.${ptr.id.name.source}`;
       ptr = ptr.next;
+      key += `.${ptr.id.name.source}`;
     }
 
-    if (ptr.next) {
+    if (ptr.next || obj === undefined) {
       throw new Error(codeFrame(input, `Eval error, expect ${key} to be object, got ${typeof obj}`, expr.id.name.pos));
     }
 
@@ -160,7 +163,7 @@ export function evalExpand(expr: parse.Expand, input: string, env: Env) {
 
 export function evalFunc(expr: parse.Func, input: string, env: Env) {
   return (...params: any[]) => {
-    const bodyEnv = new Env(env);
+    const bodyEnv = new Env(env, 'func');
 
     if (expr.param.type === 'Expand') {
       evalExpand(expr.param as parse.Expand, input, bodyEnv)(...params);
@@ -215,9 +218,12 @@ export function evalLit(expr: parse.Lit, input: string, _env: Env) {
 }
 
 export function evalUnOp(expr: parse.UnOpExpr, input: string, env: Env) {
+  const value = evalExpr(expr.value, input, env);
   switch (expr.op.type) {
     case '!':
-      return !evalExpr(expr.value, input, env);
+      return !value;
+    case '...':
+      return Array.isArray(value) ? [...value] : { ...value };
     default:
       throw new Error(codeFrame(input, `Eval error, expect <unOp>, got ${expr.op.type}`, expr.op.pos));
   }
@@ -324,16 +330,16 @@ export function evalIf(expr: parse.Call, input: string, env: Env) {
   const condValue = evalExpr(cond, input, env);
 
   if (condValue) {
-    return evalExpr(then, input, new Env(env));
+    return evalExpr(then, input, new Env(env, 'if-then'));
   }
 
   const el = expr.children[3] as parse.Expr;
 
-  return el && evalExpr(el, input, new Env(env));
+  return el && evalExpr(el, input, new Env(env, 'if-else'));
 }
 
 export function evalBegin(expr: parse.Call, input: string, env: Env) {
-  const beginEnv = new Env(env);
+  const beginEnv = new Env(env, 'begin');
   const results: any[] = [];
 
   for (const e of expr.children.slice(1)) {

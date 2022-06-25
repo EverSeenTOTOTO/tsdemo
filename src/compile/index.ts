@@ -15,7 +15,8 @@ export const parse = (input: string, pos = new Position()) => {
   return nodes;
 };
 
-export const setupJsGlobal = (env: Env) => {
+export const createGlobalEnv = () => {
+  const env = new Env(undefined, 'globalJs');
   for (const key of Object.getOwnPropertyNames(globalThis)) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -26,7 +27,7 @@ export const setupJsGlobal = (env: Env) => {
   // eslint-disable-next-line import/no-dynamic-require, global-require
   env.set('require', (pkg: string) => require(pkg));
 
-  return env;
+  return new Env(env, 'global');
 };
 
 export const evaluate = (input: string, env = new Env(), pos = new Position()) => {
@@ -43,7 +44,7 @@ export const repl = () => {
   rl.prompt();
   rl.on('line', (line) => {
     try {
-      console.log(...evaluate(line, setupJsGlobal(new Env())).result);
+      console.log(...evaluate(line, createGlobalEnv()).result);
     } catch (e) {
       console.error(e);
     } finally {
@@ -56,5 +57,5 @@ export const repl = () => {
 
 export const evalFile = (file: string) => {
   const content = fs.readFileSync(file, 'utf8');
-  return evaluate(content, setupJsGlobal(new Env()));
+  return evaluate(content, createGlobalEnv());
 };

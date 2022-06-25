@@ -203,6 +203,7 @@ function parseCallExprs(input: string, pos: Position) {
       children.push(parseAssign(input, pos));
       break;
     case '!':
+    case '...':
       children.push(parseUnOpExpr(input, pos));
       break;
     default:

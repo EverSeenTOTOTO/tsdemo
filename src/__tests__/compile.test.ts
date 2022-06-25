@@ -1,6 +1,5 @@
 import path from 'path';
-import { parse, evaluate, setupJsGlobal } from '@/compile/';
-import { Env } from '@/compile/eval';
+import { parse, evaluate, createGlobalEnv } from '@/compile/';
 
 it('parse 1', () => {
   const input = `
@@ -56,41 +55,17 @@ it('parse 4', () => {
   expect(() => parse(input)).not.toThrow();
 });
 
-it('parse 5', () => {
-  const input = `
-[export SimpleQeuue /[watcher interval name] [begin
-  [= this.watcher watcher]
-  [= this.interval interval]
-  [= this.name name]
-  [= this.queue []]
-  [= this.enque /[e] [begin
-    [match e.type 
-      [== 'jump' [= this.queue [vec e]]]
-      [== 'refresh' [begin 
-        [= this.queue [this.queue.filter /[each] [!= each.type e.type]]]
-        [this.queue.push e]]]]
-    [this.notify]]]
-  [= this.notify /[] [begin
-    [if this.timeoutId [ret]]
-    [= this.timeoutId [setTimeout /[] [[this.dispatch] this.interval]]]]]
-  [= this.dispatch /[] []]]]
-
-[= q [SimpleQeuue [watcher 300 'q']]]
-    `;
-  expect(() => parse(input)).not.toThrow();
-});
-
 it('parse 6', () => {
   const input = `
-[= stack /[vec] [begin
-  [= this.vec vec]
-  [= this.clear /[] [= this.vec []]]
-  [= this.push /[x] [= this.vec [.. this.vec [x]]]]
-  [= this.pop /[] [begin
-    ; line comment
-    [= [... x] ;inline comment; this.vec]
-    [splice this.vec [- [this.vec.len] 1] 1]
-    x]]]]
+[= stack /[vec] [begin 
+  [= s [Object]]
+  [= s.vec vec]
+  [= s.push /[x] [= s.vec [.. s.vec [x]]]]
+  [= s.pop /[] [begin
+    [= [... x] s.vec]
+    [s.vec.splice [- s.vec.length 1] 1]
+    x]]
+  s]]
 
 [= s [stack [1 2 3]]]
 [s.push 2]
@@ -100,11 +75,6 @@ it('parse 6', () => {
 [= v [.. v [2]]]
 [map v /[x] [+ x 1]]
 [map v /[x idx] [+ x idx]]
-
-[= obj /[a b] [begin
-  [= this.a a]
-  [= this.b b]
-  [log /[] [log this.b]]]]
 
 ; line comment
 [= o [obj 1 [obj 2 3]]]
@@ -146,9 +116,7 @@ it('evaluate 2', () => {
 [[require 'os'].cpus].length
 `;
 
-  const env = new Env();
-  const { result } = evaluate(code, setupJsGlobal(env));
-
+  const { result } = evaluate(code, createGlobalEnv());
   expect(result).toEqual([
     undefined,
     false,
@@ -164,8 +132,7 @@ it('evaluate 3', async () => {
   const code = `
 [[import 'path'].then /[path] [path.resolve '.']]
 `;
-  const env = new Env();
-  const result = await Promise.all(evaluate(code, setupJsGlobal(env)).result);
+  const result = await Promise.all(evaluate(code, createGlobalEnv()).result);
 
   expect(result).toEqual([
     path.resolve('.'),
@@ -244,7 +211,37 @@ it('evaluate 8', () => {
 [o.a o.c]
 `;
 
-  const { result } = evaluate(code, setupJsGlobal(new Env()));
+  const { result } = evaluate(code, createGlobalEnv());
 
   expect(result[result.length - 1]).toEqual([1, 4]);
+});
+
+it('evaluate 9', () => {
+  const code = `
+[= stack /[vec] [begin 
+  [= this [Object]]
+  [= this.vec [... vec]]
+  [= this.clear /[] [= this.vec []]]
+  [= this.push /[x] [begin 
+    [= this.vec [.. this.vec [x]]]]]
+  [= this.pop /[] [begin
+    [= [... x] this.vec]
+    [this.vec.splice [- this.vec.length 1] 1]
+    x]]
+  this]]
+
+[= v [1 2 3]]
+[= s [stack v]]
+[= x [s.pop]]
+[s.clear]
+[s.push 1]
+[s.push 0]
+[= y [s.pop]]
+
+[x y v]
+    `;
+
+  const { result } = evaluate(code, createGlobalEnv());
+
+  expect(result[result.length - 1]).toEqual([3, 0, [1, 2, 3]]);
 });
