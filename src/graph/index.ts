@@ -139,6 +139,10 @@ export class Context implements IContext {
     node.emit(slot, value, this);
   }
 
+  run(): Promise<void> {
+    return this.executor.run(this);
+  }
+
   step(): Promise<void> {
     return this.executor.step(this);
   }
@@ -147,15 +151,7 @@ export class Context implements IContext {
     return this.executor.next(this);
   }
 
-  back(): Promise<void> {
-    return this.executor.back(this);
-  }
-
-  prev(): Promise<void> {
-    return this.executor.prev(this);
-  }
-
-  protected checkMaxConnection<S1, S2>(slot: ISlot<S1|S2>, conns: IConnection<S1, S2>[]) {
+  protected checkMaxConnection<S1, S2>(slot: ISlot<S1 | S2>, conns: IConnection<S1, S2>[]) {
     if (slot.maxConnection) {
       if (conns.length >= slot.maxConnection) {
         throw new Error(`Slot ${slot.name} has reached max connection`);
@@ -197,7 +193,7 @@ export class Context implements IContext {
     }
   }
 
-  contains(x: INode<any, any, any>|IConnection<any, any>): boolean {
+  contains(x: INode<any, any, any> | IConnection<any, any>): boolean {
     if (x instanceof Connection) {
       return this.connections.includes(x);
     }

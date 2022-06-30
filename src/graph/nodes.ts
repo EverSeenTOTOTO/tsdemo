@@ -1,6 +1,9 @@
 /* eslint-disable class-methods-use-this */
 /* eslint-disable max-classes-per-file */
+import betterLogging from 'better-logging';
 import { Slot, Node, IContext } from './index';
+
+betterLogging(console);
 
 export const LogLevel = {
   info: 1,
@@ -27,7 +30,7 @@ export class LoggerNode extends Node<LoggerSlot, string, never> {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   emit(level: LoggerSlot, value: string, _ctx: IContext) {
     if (LogLevel[level] && this.level >= LogLevel[level]) {
-      console[level](this.format(level, value));
+      console[level](value);
     }
   }
 
@@ -35,16 +38,12 @@ export class LoggerNode extends Node<LoggerSlot, string, never> {
     this.level = level;
   }
 
-  protected format(level: LoggerSlot, value: string) {
-    return `[${level.toUpperCase()} ${new Date().toLocaleTimeString()}]: ${value}`;
-  }
-
   clone() {
     return new LoggerNode(this.name, this.level);
   }
 }
 
-export class PipeNode<I, O> extends Node<'input'|'output', I, O> {
+export class PipeNode<I, O> extends Node<'input' | 'output', I, O> {
   constructor(name: string) {
     super(name);
     this.slots = [
@@ -83,7 +82,7 @@ export class SteppedPipeNode<I, O> extends PipeNode<I, O> {
 
       connections.forEach((c) => {
         ctx.executor.submit({
-          func: () => {
+          action: () => {
             c.to.node.emit(c.to.name, value, ctx);
           },
         });

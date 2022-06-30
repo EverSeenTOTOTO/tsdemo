@@ -6,7 +6,7 @@ import {
   SteppedPipeNode,
 } from '@/graph/nodes';
 import { Node, Context, Slot } from '@/graph/index';
-import { ExtendArray } from '@/utils';
+import { repeat } from '@/utils';
 
 describe('test basic', () => {
   const executor = new Executor();
@@ -57,7 +57,7 @@ describe('test clone', () => {
     const clone = ctx.clone();
     expect(clone.connections.length).toBe(ctx.connections.length);
 
-    const info = jest.spyOn(console, 'info').mockImplementation(() => {});
+    const info = jest.spyOn(console, 'info').mockImplementation(() => { });
 
     clone.emit(pipe, 'input', 'test');
     expect(info).not.toHaveBeenCalled();
@@ -84,8 +84,8 @@ describe('test nodes', () => {
     ctx.connect(pipe, 'output', pipe2, 'input');
     ctx.connect(pipe2, 'output', log, 'error');
 
-    const info = jest.spyOn(console, 'info').mockImplementation(() => {});
-    const error = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const info = jest.spyOn(console, 'info').mockImplementation(() => { });
+    const error = jest.spyOn(console, 'error').mockImplementation(() => { });
 
     ctx.emit(pipe, 'input', 'hello');
 
@@ -115,8 +115,8 @@ describe('test nodes', () => {
     ctx.connect(pipe, 'output', pipe2, 'input');
     ctx.connect(pipe2, 'output', log, 'error');
 
-    const info = jest.spyOn(console, 'info').mockImplementation(() => {});
-    const error = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const info = jest.spyOn(console, 'info').mockImplementation(() => { });
+    const error = jest.spyOn(console, 'error').mockImplementation(() => { });
 
     ctx.emit(pipe, 'input', 'hello');
 
@@ -148,7 +148,7 @@ describe('test nodes', () => {
     ctx.connect(pipe, 'output', pipe2, 'input');
     ctx.connect(pipe2, 'output', log, 'error');
 
-    const error = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const error = jest.spyOn(console, 'error').mockImplementation(() => { });
 
     ctx.emit(pipe, 'input', 'hello');
 
@@ -159,71 +159,59 @@ describe('test nodes', () => {
   });
 });
 
-describe('test back', () => {
-  class TestNode extends Node<'value', number, void> {
-    array: ExtendArray<number> = new ExtendArray<number>();
+class StateNode<O> extends Node<'i' | 'o1' | 'o2', string[], O> {
+  pattern: RegExp;
 
-    constructor(name: string) {
-      super(name);
-      this.slots = [
-        new Slot('value', this),
-      ];
-    }
+  constructor(name: string, pattern: RegExp) {
+    super(name);
+    this.pattern = pattern;
+    this.slots = [
+      new Slot('i', this),
+      new Slot('o1', this),
+      new Slot('o2', this),
+    ];
+  }
 
-    emit(_slot: 'value', value: number, ctx: Context): void {
-      ctx.executor.submit({
-        desc: `Push ${value}`,
-        func: () => {
-          this.array.push(value);
+  emit(_input: 'i', value: string[], ctx: Context) {
+    if (value.length === 0) return;
 
-          return { // undo
-            desc: `Pop ${value}`,
-            func: () => {
-              if (this.array.tail() !== value) {
-                throw new Error(`Cannot pop back, tail is ${this.array.tail()}`);
-              }
+    const match = this.pattern.exec(value[0]);
+    // eslint-disable-next-line no-nested-ternary
+    const slot = this.getSlot(match?.groups?.o1 ? 'o1' : match?.groups?.o2 ? 'o2' : 'none');
 
-              this.array.pop();
-            },
-          };
-        },
+    if (slot) {
+      const connections = ctx.getConnectionsByFrom(slot);
+
+      value.splice(0, 1);
+
+      connections.forEach((c) => {
+        ctx.executor.submit({
+          action: () => {
+            c.to.node.emit(c.to.name, value, ctx);
+          },
+        });
       });
     }
   }
+}
 
-  it('test back', async () => {
-    const executor = new Executor();
-    const ctx = new Context(executor);
+it('test run', async () => {
+  const executor = new Executor();
+  const ctx = new Context(executor);
 
-    const pipe = new PipeNode('pipe');
-    const test = new TestNode('test');
+  const a = new StateNode('a', /(?<o1>a)/);
+  const c = new StateNode('c', /(?<o1>a)|(?<o2>b)/);
+  const log = new LoggerNode('log', LogLevel.error);
 
-    ctx.addNode(pipe);
-    ctx.addNode(test);
+  ctx.connect(a, 'o1', c, 'i');
+  ctx.connect(c, 'o1', a, 'i');
+  ctx.connect(c, 'o2', log, 'info');
 
-    ctx.connect(pipe, 'output', test, 'value');
+  const input = [...repeat('a', 100), 'a', 'b'];
 
-    ctx.emit(pipe, 'input', 1);
-    ctx.emit(pipe, 'input', 2);
+  ctx.emit(a, 'input', input);
 
-    expect([...test.array]).toEqual([]);
+  await ctx.run();
 
-    await ctx.next();
-    expect([...test.array]).toEqual([1, 2]);
-
-    ctx.emit(pipe, 'input', 3);
-
-    await ctx.step();
-    expect([...test.array]).toEqual([1, 2, 3]);
-    await ctx.back();
-    expect([...test.array]).toEqual([1, 2]);
-    await ctx.back();
-    expect([...test.array]).toEqual([1]);
-    await ctx.step();
-    expect([...test.array]).toEqual([1, 2]);
-    await ctx.prev();
-    expect([...test.array]).toEqual([]);
-    await ctx.next();
-    expect([...test.array]).toEqual([1, 2, 3]);
-  });
+  expect(input).toEqual([]);
 });

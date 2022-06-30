@@ -12,7 +12,7 @@ export interface INode<S, I, O> {
 
   clone(): INode<S, I, O>;
 
-  getSlot(name: S): ISlot<S>|undefined;
+  getSlot(name: S): ISlot<S> | undefined;
   addSlot(slot: ISlot<S>): void;
   removeSlot(slot: ISlot<S>, ctx?: IContext): void;
 
@@ -29,8 +29,8 @@ export interface IConnection<S1, S2> {
 }
 
 export type Task = {
-  func: (ctx?: IContext) => Task|void|Promise<Task|void>;
-  desc?: string;
+  action: (ctx?: IContext) => Task | void | Promise<Task | void>;
+  description?: string;
 };
 
 export interface IExecutor {
@@ -39,10 +39,11 @@ export interface IExecutor {
   submit(task: Task): void;
 
   reset(): void;
+  run(ctx: IContext): Promise<void>;
   step(ctx: IContext): Promise<void>;
   next(ctx: IContext): Promise<void>;
-  back(ctx: IContext): Promise<void>;
-  prev(ctx: IContext): Promise<void>;
+  // back(ctx: IContext): Promise<void>;
+  // prev(ctx: IContext): Promise<void>;
 }
 
 export interface IContext {
@@ -55,15 +56,16 @@ export interface IContext {
 
   emit<S, I, O>(node: INode<S, I, O>, slot: S, value: I): void;
 
+  run(): Promise<void>;
   step(): Promise<void>;
   next(): Promise<void>;
-  back(): Promise<void>;
-  prev(): Promise<void>;
+  // back(): Promise<void>;
+  // prev(): Promise<void>;
 
   connect<S1, S2, V>(from: INode<S1, any, V>, fromSlot: S1, to: INode<S2, V, any>, toSlot: S2): IConnection<S1, S2>;
   disconnect<S1, S2, V>(from: INode<S1, any, V>, fromSlot: S1, to: INode<S2, V, any>, toSlot: S2): void;
 
-  contains(x: INode<any, any, any>|IConnection<any, any>): boolean;
+  contains(x: INode<any, any, any> | IConnection<any, any>): boolean;
 
   getNode(name: string): INode<any, any, any> | undefined;
   getConnection<S1, S2>(from: ISlot<S1>, to: ISlot<S2>): IConnection<S1, S2> | undefined;
