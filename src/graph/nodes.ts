@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable class-methods-use-this */
 /* eslint-disable max-classes-per-file */
 import betterLogging from 'better-logging';
@@ -13,10 +14,10 @@ export const LogLevel = {
 
 export type LoggerSlot = keyof typeof LogLevel;
 
-export class LoggerNode extends Node<LoggerSlot, string, never> {
+export class LoggerNode extends Node<LoggerSlot, unknown, never> {
   public level: number;
 
-  constructor(name: string, level = 0) {
+  constructor(name: string, level = LogLevel.info) {
     super(name);
 
     this.level = level;
@@ -28,9 +29,9 @@ export class LoggerNode extends Node<LoggerSlot, string, never> {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  emit(level: LoggerSlot, value: string, _ctx: IContext) {
+  emit(level: LoggerSlot, value: unknown, _ctx: IContext) {
     if (LogLevel[level] && this.level >= LogLevel[level]) {
-      console[level](value);
+      console[level](`${this.name}: ${JSON.stringify(value, null, 2)}`);
     }
   }
 
@@ -43,7 +44,7 @@ export class LoggerNode extends Node<LoggerSlot, string, never> {
   }
 }
 
-export class PipeNode<I, O> extends Node<'input' | 'output', I, O> {
+export class UnaryNode<I, O> extends Node<'input' | 'output', I, O> {
   constructor(name: string) {
     super(name);
     this.slots = [
@@ -54,39 +55,81 @@ export class PipeNode<I, O> extends Node<'input' | 'output', I, O> {
 
   emit(input: 'input', value: I, ctx: IContext) {
     if (input !== 'input') {
-      throw new Error('PipeNode can only emit input');
+      throw new Error('UnaryNode can only emit to "input" slot');
     }
 
-    const output = this.getSlot('output');
+    this.handle(input, value, ctx);
+  }
 
-    if (output) {
-      const connections = ctx.getConnectionsByFrom(output);
-
-      connections.forEach((c) => {
-        c.to.node.emit(c.to.name, value, ctx);
-      });
-    }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  handle(_input: 'input', _value: I, _ctx: IContext) {
+    throw new Error('Method not implemented');
   }
 }
 
-export class SteppedPipeNode<I, O> extends PipeNode<I, O> {
-  emit(input: 'input', value: I, ctx: IContext) {
-    if (input !== 'input') {
-      throw new Error('PipeNode can only emit input');
+export class BinaryNode<I, O> extends Node<'lhs' | 'rhs' | 'output', I, O> {
+  ltemp?: I;
+
+  rtemp?: I;
+
+  constructor(name: string) {
+    super(name);
+    this.slots = [
+      new Slot('lhs', this),
+      new Slot('rhs', this),
+      new Slot('output', this),
+    ];
+  }
+
+  emit(input: 'lhs' | 'rhs', value: I, ctx: IContext) {
+    if (input !== 'lhs' && input !== 'rhs') {
+      throw new Error('BinaryNode can only emit to "lhs" or "rhs" slot');
     }
+    if (input === 'lhs') this.ltemp = value;
+    if (input === 'rhs') this.rtemp = value;
 
-    const output = this.getSlot('output');
+    if (this.ltemp !== undefined && this.rtemp !== undefined) {
+      this.handle(input, value, ctx);
+    }
+  }
 
-    if (output) {
-      const connections = ctx.getConnectionsByFrom(output);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  handle(_input: 'lhs' | 'rhs', _value: I, _ctx: IContext) {
+    throw new Error('Method not implemented');
+  }
+}
 
-      connections.forEach((c) => {
-        ctx.executor.submit({
-          action: () => {
-            c.to.node.emit(c.to.name, value, ctx);
-          },
-        });
+// for test
+export class PipeNode<I, O> extends UnaryNode<I, O> {
+  values: I[] = [];
+
+  handle(_input: 'input', value: I, ctx: IContext) {
+    const output = this.getSlot('output')!;
+    const connections = ctx.getConnectionsByFrom(output);
+
+    this.values.push(value);
+
+    connections.forEach((c) => {
+      c.to.node.emit(c.to.name, value, ctx);
+    });
+  }
+}
+
+export class SteppedPipeNode<I, O> extends UnaryNode<I, O> {
+  values: I[] = [];
+
+  handle(_input: 'input', value: I, ctx: IContext) {
+    const output = this.getSlot('output')!;
+    const connections = ctx.getConnectionsByFrom(output);
+
+    this.values.push(value);
+
+    connections.forEach((c) => {
+      ctx.executor.submit({
+        action() {
+          c.to.node.emit(c.to.name, value, ctx);
+        },
       });
-    }
+    });
   }
 }

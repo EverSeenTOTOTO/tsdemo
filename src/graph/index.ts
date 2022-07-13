@@ -119,7 +119,7 @@ export class Context implements IContext {
     const ctx = new Context(this.executor.clone());
 
     this.nodes.forEach((node) => {
-      ctx.addNode(node.clone());
+      ctx.addNodes(node.clone());
     });
 
     // cannot clone connection directly
@@ -221,12 +221,8 @@ export class Context implements IContext {
     return this.connections.filter((c) => c.to === to);
   }
 
-  addNode(node: INode<any, any, any>): void {
-    this.nodes.push(node);
-  }
-
-  addConnection(connection: IConnection<any, any>): void {
-    this.connections.push(connection);
+  addNodes(...nodes: INode<any, any, any>[]) {
+    this.nodes.push(...nodes);
   }
 
   removeNode(node: INode<any, any, any>): void {
@@ -235,14 +231,6 @@ export class Context implements IContext {
     if (idx !== -1) {
       this.removeConnectionByNode(node);
       this.nodes.splice(idx, 1);
-    }
-  }
-
-  removeConnection(connection: IConnection<any, any>): void {
-    const idx = this.connections.findIndex((c) => c === connection);
-
-    if (idx !== -1) {
-      this.connections.splice(idx, 1);
     }
   }
 

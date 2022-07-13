@@ -72,11 +72,9 @@ export interface IContext {
   getConnectionsByFrom<S>(from: ISlot<S>): IConnection<S, any>[];
   getConnectionsByTo<S>(to: ISlot<S>): IConnection<any, S>[];
 
-  addNode(node: INode<any, any, any>): void;
-  addConnection(connection: IConnection<any, any>): void;
+  addNodes(...nodes: INode<any, any, any>[]): void;
 
   removeNode(node: INode<any, any, any>): void;
-  removeConnection(connection: IConnection<any, any>): void;
   removeConnectionBySlot(slot: ISlot<any>): void;
   removeConnectionByNode(node: INode<any, any, any>): void;
 }
