@@ -39,6 +39,11 @@ it('test And', async () => {
   await ctx.step();
   expect(info).not.toHaveBeenCalled();
 
+  ctx.emit(and, 'lhs', 0);
+  await ctx.step();
+  expect(info).toHaveBeenLastCalledWith('and: 0');
+
+  // rhs变0晚于A变1，产生瞬时的高电平
   ctx.emit(and, 'lhs', 1);
   await ctx.step();
   expect(info).toHaveBeenLastCalledWith('and: 1');

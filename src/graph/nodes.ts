@@ -1,10 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable class-methods-use-this */
 /* eslint-disable max-classes-per-file */
-import betterLogging from 'better-logging';
 import { Slot, Node, IContext } from './index';
-
-betterLogging(console);
 
 export const LogLevel = {
   info: 1,
@@ -101,13 +98,9 @@ export class BinaryNode<I, O> extends Node<'lhs' | 'rhs' | 'output', I, O> {
 
 // for test
 export class PipeNode<I, O> extends UnaryNode<I, O> {
-  values: I[] = [];
-
   handle(_input: 'input', value: I, ctx: IContext) {
     const output = this.getSlot('output')!;
     const connections = ctx.getConnectionsByFrom(output);
-
-    this.values.push(value);
 
     connections.forEach((c) => {
       c.to.node.emit(c.to.name, value, ctx);
@@ -116,13 +109,9 @@ export class PipeNode<I, O> extends UnaryNode<I, O> {
 }
 
 export class SteppedPipeNode<I, O> extends UnaryNode<I, O> {
-  values: I[] = [];
-
   handle(_input: 'input', value: I, ctx: IContext) {
     const output = this.getSlot('output')!;
     const connections = ctx.getConnectionsByFrom(output);
-
-    this.values.push(value);
 
     connections.forEach((c) => {
       ctx.executor.submit({
