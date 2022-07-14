@@ -1,5 +1,7 @@
 import { IContext } from '@/graph';
+import { PipeNode } from '@/graph/nodes';
 import { createComponent } from './component';
+import { OrNotGate } from './gate';
 
 // CD4532 优先编码器
 export function createCD4532(ctx: IContext) {
@@ -73,5 +75,58 @@ export function createS4(ctx: IContext) {
 
   return {
     Y, S0, S1, D0, D1, D2, D3,
+  };
+}
+
+// 半加器
+export function createHalfAdder(ctx: IContext) {
+  const S = createComponent('~AB+A~B', ctx);
+  const C = createComponent('AB', ctx);
+
+  const A = ctx.getNode('A')!;
+  const B = ctx.getNode('B')!;
+
+  return {
+    S, C, A, B,
+  };
+}
+
+// 全加器
+export function createFullAdder(ctx: IContext) {
+  const S = createComponent('~A~BC+~AB~C+A~B~C+ABC', ctx);
+  const Cout = createComponent('AB+A~BC+~ABC', ctx);
+
+  const A = ctx.getNode('A')!;
+  const B = ctx.getNode('B')!;
+  const Cin = ctx.getNode('C')!;
+
+  return {
+    S, Cout, A, B, Cin,
+  };
+}
+
+// 或非门SR锁存器
+export function createSR(ctx: IContext) {
+  const G1 = new OrNotGate('G1');
+  const G2 = new OrNotGate('G2');
+
+  ctx.addNodes(G1, G2);
+
+  const R = new PipeNode('R');
+  const S = new PipeNode('S');
+  const Q = new PipeNode('Q');
+  const N = new PipeNode('N');
+
+  ctx.addNodes(R, S, Q, N);
+
+  ctx.connect(R, 'output', G1, 'lhs');
+  ctx.connect(G2, 'output', G1, 'rhs');
+  ctx.connect(G1, 'output', Q, 'input');
+  ctx.connect(S, 'output', G2, 'rhs');
+  ctx.connect(G1, 'output', G2, 'lhs');
+  ctx.connect(G2, 'output', N, 'input');
+
+  return {
+    R, S, Q, N,
   };
 }
