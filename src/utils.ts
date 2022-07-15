@@ -1,5 +1,7 @@
 /* eslint-disable max-classes-per-file */
 /* eslint-disable no-extend-native */
+import { randomInt } from 'crypto';
+
 export class ExtendMap<K, V> extends Map<K, V> {
   get length() {
     return this.ks().length;
@@ -128,4 +130,17 @@ export const call = async <T extends (...args: Param[]) => any, Param>(fn: T, ..
   return toString.call(fn) === '[object AsyncFunction]'
     ? Promise.resolve(fn(...param))
     : fn(...param);
+};
+
+const memo = new Map<string, boolean>();
+export const uuid = () => {
+  let id = String(randomInt(999, 9999));
+
+  while (memo.get(id)) {
+    id = String(randomInt(999, 9999));
+  }
+
+  memo.set(id, true);
+
+  return id;
 };

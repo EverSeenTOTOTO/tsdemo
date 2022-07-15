@@ -27,6 +27,7 @@ module.exports = {
     'arrow-body-style': 'off',
     'no-await-in-loop': 'off',
     'no-restricted-syntax': 'off',
+    'max-classes-per-file': 'off',
     'import/prefer-default-export': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/no-use-before-define': 'off',

@@ -7,7 +7,7 @@ const executor = new Executor();
 const ctx = new Context(executor);
 
 beforeEach(() => {
-  ctx.reset();
+  ctx.clear();
 });
 
 it('test Not', async () => {
@@ -133,4 +133,33 @@ it('test compose', async () => {
   await ctx.run();
   expect(Z.state).toEqual({ info: 1 });
   expect(L.state).toEqual({ info: 1 });
+});
+
+it('test TG', async () => {
+  const t = new g.TGate('t');
+  const T = createStore(ctx, 'T', ['T']);
+
+  ctx.addNodes(t, T);
+
+  ctx.connect(t, 'lhs', T, 'T');
+
+  ctx.emit(t, 'rhs', 1);
+  await ctx.run();
+  expect(T.record.length).toBe(0);
+
+  // 导通
+  ctx.emit(t, 'ctrl', 1);
+  await ctx.run();
+  expect(T.state).toEqual({ T: 1 });
+
+  ctx.emit(t, 'rhs', 0);
+  await ctx.run();
+  expect(T.state).toEqual({ T: 0 });
+
+  T.clear();
+
+  // 断开
+  ctx.emit(t, 'ctrl', 0);
+  await ctx.run();
+  expect(T.record.length).toBe(0);
 });

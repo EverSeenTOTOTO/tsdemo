@@ -1,7 +1,8 @@
+import EventEmitter from 'events';
 import { call, ExtendArray as Queue } from '@/utils';
 import { IExecutor, Task, IContext } from './types';
 
-export class Executor implements IExecutor {
+export class Executor extends EventEmitter implements IExecutor {
   private pending: Queue<Task> = new Queue();
 
   clone(): Executor {
@@ -13,10 +14,11 @@ export class Executor implements IExecutor {
   }
 
   submit(task: Task): void {
+    this.emit('submit', task);
     this.pending.push(task);
   }
 
-  reset() {
+  clear() {
     this.pending = new Queue();
   }
 
@@ -24,20 +26,27 @@ export class Executor implements IExecutor {
   async step(ctx: IContext): Promise<void> {
     const first = this.pending.shift();
 
+    // if (first?.description) {
+    //   console.log(first.description);
+    // }
+
+    this.emit('step', first);
+
     return first ? call(first.action, ctx) : Promise.resolve();
   }
 
-  // 执行直到pending为空，执行过程中新增的task会被放入pending中，下一次next才执行，所以开头交换current和pending
   async next(ctx: IContext): Promise<void> {
-    const current = this.pending;
+    // 执行直到pending为空，执行过程中新增的task会被放入pending中
+    // 为了复用step，在pending中间加一个$标记
+    const sym = Symbol('$');
 
-    this.pending = new Queue();
+    this.pending.push({ action() { }, description: sym });
 
-    while (current.head()) {
-      const first = current.shift();
-
-      await call(first!.action, ctx);
+    while (this.pending.head()?.description !== sym) {
+      await this.step(ctx);
     }
+
+    this.pending.shift();
   }
 
   async run(ctx: IContext): Promise<void> {

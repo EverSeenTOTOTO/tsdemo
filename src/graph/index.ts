@@ -13,18 +13,15 @@ export * from './types';
 export class Slot<S> implements ISlot<S> {
   public readonly name: S;
 
-  public maxConnection?: number;
-
   public node: INode<S, any, any>;
 
-  constructor(name: S, node: INode<S, any, any>, maxConnection?: number) {
+  constructor(name: S, node: INode<S, any, any>) {
     this.name = name;
     this.node = node;
-    this.maxConnection = maxConnection;
   }
 
   clone(): ISlot<S> {
-    return new Slot(this.name, this.node, this.maxConnection);
+    return new Slot(this.name, this.node);
   }
 }
 
@@ -33,19 +30,9 @@ export class Connection<S1, S2> implements IConnection<S1, S2> {
 
   public readonly to: Slot<S2>;
 
-  public broken = false;
-
   constructor(from: Slot<S1>, to: Slot<S2>) {
     this.from = from;
     this.to = to;
-  }
-
-  fix() {
-    this.broken = false;
-  }
-
-  break() {
-    this.broken = true;
   }
 }
 
@@ -109,10 +96,10 @@ export class Context implements IContext {
     this.executor = executor;
   }
 
-  reset() {
+  clear() {
     this.nodes = [];
     this.connections = [];
-    this.executor.reset();
+    this.executor.clear();
   }
 
   clone() {
@@ -151,14 +138,6 @@ export class Context implements IContext {
     return this.executor.next(this);
   }
 
-  protected checkMaxConnection<S1, S2>(slot: ISlot<S1 | S2>, conns: IConnection<S1, S2>[]) {
-    if (slot.maxConnection) {
-      if (conns.length >= slot.maxConnection) {
-        throw new Error(`Slot ${slot.name} has reached max connection`);
-      }
-    }
-  }
-
   connect<S1, S2, V>(from: INode<S1, any, V>, fromSlot: S1, to: INode<S2, V, any>, toSlot: S2): IConnection<S1, S2> {
     const fromS = from.getSlot(fromSlot);
     const toS = to.getSlot(toSlot);
@@ -170,9 +149,6 @@ export class Context implements IContext {
     if (!toS) {
       throw new Error(`${to.name} has no slot ${toSlot}`);
     }
-
-    this.checkMaxConnection(fromS, this.getConnectionsByFrom(fromS));
-    this.checkMaxConnection(toS, this.getConnectionsByTo(toS));
 
     const connection = new Connection(fromS, toS);
     this.connections.push(connection);

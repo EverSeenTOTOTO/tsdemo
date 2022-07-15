@@ -1,5 +1,5 @@
 import {
-  createBCD8421, createCD4532, createFullAdder, createHalfAdder, createS2, createS4,
+  createBCD8421, createCD4532, createFullAdder, createHalfAdder, createNBitAdder, createS2, createS4,
 } from '@/electron/circuit';
 import { Executor } from '@/graph/executor';
 import { Context } from '@/graph/index';
@@ -9,7 +9,7 @@ const executor = new Executor();
 const ctx = new Context(executor);
 
 beforeEach(() => {
-  ctx.reset();
+  ctx.clear();
 });
 
 it('test CD4532', async () => {
@@ -186,4 +186,39 @@ it('test FullAdder', async () => {
 
   await ctx.run();
   expect(result.state).toEqual({ S: 0, Cout: 1 });
+});
+
+it('test NBitAdder', async () => {
+  const adders = createNBitAdder(ctx);
+  const result = createStore(ctx, 'result', ['S0', 'S1', 'S2', 'S3', 'Cout']);
+
+  ctx.connect(adders[0].S, 'output', result, 'S0');
+  ctx.connect(adders[1].S, 'output', result, 'S1');
+  ctx.connect(adders[2].S, 'output', result, 'S2');
+  ctx.connect(adders[3].S, 'output', result, 'S3');
+  ctx.connect(adders[3].Cout, 'output', result, 'Cout');
+
+  // 1101 + 1100 = 1001
+  ctx.emit(adders[0].Cin, 'input', 0);
+  ctx.emit(adders[0].A, 'input', 1);
+  ctx.emit(adders[1].A, 'input', 0);
+  ctx.emit(adders[2].A, 'input', 1);
+  ctx.emit(adders[3].A, 'input', 1);
+  ctx.emit(adders[0].B, 'input', 0);
+  ctx.emit(adders[1].B, 'input', 0);
+  ctx.emit(adders[2].B, 'input', 1);
+  ctx.emit(adders[3].B, 'input', 1);
+
+  await ctx.run();
+  expect(result.state).toEqual({
+    S0: 1, S1: 0, S2: 0, S3: 1, Cout: 1,
+  });
+
+  // 1101 + 1100 + 1 = 1101 - 0011 = 1010
+  ctx.emit(adders[0].Cin, 'input', 1);
+
+  await ctx.run();
+  expect(result.state).toEqual({
+    S0: 0, S1: 1, S2: 0, S3: 1, Cout: 1,
+  });
 });

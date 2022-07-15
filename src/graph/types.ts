@@ -1,7 +1,6 @@
 export interface ISlot<S> {
   name: S;
   node: INode<S, any, any>;
-  maxConnection?: number;
 
   clone(): ISlot<S>;
 }
@@ -22,15 +21,11 @@ export interface INode<S, I, O> {
 export interface IConnection<S1, S2> {
   from: ISlot<S1>;
   to: ISlot<S2>;
-
-  broken: boolean;
-  fix(): void;
-  break(): void;
 }
 
 export type Task = {
   action: (ctx?: IContext) => Task | void | Promise<Task | void>;
-  description?: string;
+  description?: string | symbol;
 };
 
 export interface IExecutor {
@@ -38,7 +33,7 @@ export interface IExecutor {
 
   submit(task: Task): void;
 
-  reset(): void;
+  clear(): void;
   run(ctx: IContext): Promise<void>;
   step(ctx: IContext): Promise<void>;
   next(ctx: IContext): Promise<void>;
@@ -52,7 +47,7 @@ export interface IContext {
   executor: IExecutor;
 
   clone(): IContext;
-  reset(): void;
+  clear(): void;
 
   emit<S, I, O>(node: INode<S, I, O>, slot: S, value: I): void;
 
