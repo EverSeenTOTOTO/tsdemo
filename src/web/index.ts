@@ -1,4 +1,4 @@
-import App from './Rough.svelte';
+import App from './semaphore.svelte';
 
 // eslint-disable-next-line no-new
 new App({

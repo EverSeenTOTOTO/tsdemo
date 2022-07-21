@@ -53,6 +53,7 @@ onmessage = function(e) {
 
   new Promise((res) => {
     const interval = setInterval(() => {
+      // all done
       if (done >= 3) {
         clearInterval(interval);
         res();
@@ -61,7 +62,7 @@ onmessage = function(e) {
   }).then(() => console.log(view[0]));
 </script>
 
-<h1 class="title">Keep Learning</h1>
+<h1 class="title">Atomic</h1>
 
 <style>
   .title {
