@@ -4,11 +4,12 @@
   const buffer = e.data;
   const id = ${id};
   const lock = new Int8Array(buffer);         // buffer[0] is lock
-  const resource = new Int32Array(buffer, 4); // buffer[1~4] save owner count
+  const resource = new Int32Array(buffer, 4); // buffer[4-8] save owner count
   const TOTAL_RESOURCE_COUNT = 2;
+  const view = new DataView(buffer);
 
   function getOwnerCount() {
-    return Atomics.load(resource, 0);
+    return view.getInt32(4, 4, true); // resource
   }
 
   postMessage('${id} started, current owns: ' + getOwnerCount());
@@ -19,8 +20,8 @@
        while (Atomics.compareExchange(lock, 0, 0, id) !== 0);
 
        // update owner count
-       if (Atomics.load(resource, 0) < TOTAL_RESOURCE_COUNT) {
-          Atomics.add(resource, 0, 1);
+       if (resource[0] < TOTAL_RESOURCE_COUNT) {
+          resource[0] += 1;
           // dont forget to release lock
           Atomics.store(lock, 0, 0);
           break;
@@ -36,7 +37,7 @@
     while (Atomics.compareExchange(lock, 0, 0, id) !== 0);
     
     // update owner count
-    Atomics.sub(resource, 0, 1);
+    resource[0] -= 1;
     // release lock
     Atomics.store(lock, 0, 0);
   }
