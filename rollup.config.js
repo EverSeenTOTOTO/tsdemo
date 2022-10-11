@@ -38,7 +38,7 @@ const opts = {
 
 export default [
   {
-    external: pkg.dependencies,
+    external: /z3/,
     input: path.resolve(__dirname, 'src/index.ts'),
     output: [
       {

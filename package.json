@@ -11,7 +11,8 @@
     "lil-gui": "^0.16.1",
     "reflect-metadata": "^0.1.13",
     "roughjs": "^4.5.2",
-    "three": "^0.139.2"
+    "three": "^0.139.2",
+    "z3-solver": "^4.11.2"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9",
