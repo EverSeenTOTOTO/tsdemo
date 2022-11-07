@@ -31,7 +31,7 @@ watch:
 	npx nodemon --config nodemon.json
 
 test:
-	npx jest --coverage --silent
+	npx jest --silent
 
 debug:
 	node --inspect-brk node_modules/jest/bin/jest.js --coverage --runInBand

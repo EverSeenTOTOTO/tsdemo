@@ -19,6 +19,8 @@
        // acquire lock
        while (Atomics.compareExchange(lock, 0, 0, id) !== 0);
 
+       // is it possible to be scheduled sleep here?
+
        // update owner count
        if (resource[0] < TOTAL_RESOURCE_COUNT) {
           resource[0] += 1;
