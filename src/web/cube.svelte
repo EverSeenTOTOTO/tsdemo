@@ -131,6 +131,7 @@
   reset();
 </script>
 
+<h1>web游戏帧率控制</h1>
 <div class="control">
   <button on:click={step}>step</button>
   <button on:click={wrap(run)}>run</button>
