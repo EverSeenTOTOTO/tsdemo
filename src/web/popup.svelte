@@ -1,4 +1,5 @@
 <script>
+  // FIXME: extra red pixel
   let throttle = null;
   let timeout = null;
   let popup = {
@@ -97,10 +98,6 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-  }
-
-  .popup--hidden {
-    display: none;
   }
 
   .popup::before,

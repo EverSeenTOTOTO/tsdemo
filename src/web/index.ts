@@ -1,4 +1,4 @@
-import App from './margin.svelte';
+import App from './pie.svelte';
 
 // eslint-disable-next-line no-new
 new App({
