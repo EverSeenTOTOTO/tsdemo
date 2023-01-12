@@ -18,9 +18,9 @@ export type len<L> = L extends []
     ? add<_1, len<Rest>>
     : never;
 
-export type concat<lhs, rhs> = lhs extends [...infer Lhs]
-  ? rhs extends [...infer Rhs]
-    ? [...Lhs, ...Rhs]
+export type concat<lhs, rhs> = lhs extends [...infer _l]
+  ? rhs extends [...infer _r]
+    ? [...lhs, ...rhs]
     : never
   : never;
 
