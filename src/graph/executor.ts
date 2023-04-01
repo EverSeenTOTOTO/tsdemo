@@ -1,6 +1,6 @@
-import EventEmitter from 'events';
 import { call, ExtendArray as Queue } from '@/utils';
-import { IExecutor, Task, IContext } from './types';
+import EventEmitter from 'events';
+import { IContext, IExecutor, Task } from './types';
 
 export class Executor extends EventEmitter implements IExecutor {
   private pending: Queue<Task> = new Queue();

@@ -144,3 +144,5 @@ export type intersect_to_tuple<I> = get_subsets<union_to_tuple<I>> extends infer
   : never
   : never
   : never;
+
+

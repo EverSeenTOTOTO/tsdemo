@@ -1,4 +1,4 @@
-import App from './pie.svelte';
+import App from './cors.svelte';
 
 // eslint-disable-next-line no-new
 new App({

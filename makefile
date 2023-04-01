@@ -15,10 +15,8 @@ build: clean
 	# npx tsc -p .  --emitDeclarationOnly
 	# npx tsc-alias
 	npx rollup -c rollup.config.js
-	cp node_modules/z3-solver/build/z3-built* dist/
 
 web:
-	cp public/index.html ${DIST}/web/
 	npx rollup -wc rollup.config.js
 
 start: build
