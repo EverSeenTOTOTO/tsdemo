@@ -1,3 +1,3 @@
 ## Popup.svelte
 
-<img src="./Popup.gif" />
+<img src="./Popup.webp" />

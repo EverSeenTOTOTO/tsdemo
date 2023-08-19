@@ -27,11 +27,11 @@
       throttle = null;
       popup.x = e.clientX + 32;
       popup.y = e.clientY + 32;
-      if (popup.x + popup.width > window.innerwidth) {
-        popup.x = window.innerwidth - popup.width - 32;
+      if (popup.x + popup.width > window.innerWidth) {
+        popup.x = window.innerWidth - popup.width - 32;
       }
-      if (popup.y + popup.height > window.innerheight) {
-        popup.y = window.innerheight - popup.height - 32;
+      if (popup.y + popup.height > window.innerHeight) {
+        popup.y = window.innerHeight - popup.height - 32;
       }
     });
   }

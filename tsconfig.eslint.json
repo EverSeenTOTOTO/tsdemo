@@ -1,14 +1,14 @@
 {
-    "extends": "./tsconfig.json",
-    "include": [
-        "src/**/*",
-        "commitlint.config.js",
-        "babel.config.js",
-        ".eslintrc.js",
-        "jest.config.js",
-        "rollup.config.js"
-    ],
-    "exclude": [
-      "src/**/*.svelte"
-    ]
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/**/*",
+    "commitlint.config.js",
+    "babel.config.js",
+    ".eslintrc.js",
+    "jest.config.js",
+    "rollup.config.js"
+  ],
+  "exclude": [
+    "src/**/*.svelte"
+  ]
 }

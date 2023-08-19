@@ -1,4 +1,4 @@
-import App from './cors.svelte';
+import App from './line-drawing.svelte';
 
 // eslint-disable-next-line no-new
 new App({

@@ -22,9 +22,6 @@ web:
 start: build
 	node ${DIST}/index.js
 
-sq:
-	node ${DIST}/index.js script.sq
-
 watch:
 	npx nodemon --config nodemon.json
 

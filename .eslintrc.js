@@ -23,6 +23,7 @@ module.exports = {
     'no-console': 'off',
     'no-continue': 'off',
     'no-plusplus': 'off',
+    'no-nested-ternary': 'off',
     'max-len': 'off',
     'arrow-body-style': 'off',
     'no-await-in-loop': 'off',
