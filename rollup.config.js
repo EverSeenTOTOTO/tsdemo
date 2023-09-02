@@ -83,6 +83,10 @@ export default [
             src: 'public/index.html',
             dest: 'dist/web',
           },
+          {
+            src: 'src/web/CSSHoudini.js',
+            dest: 'dist/web',
+          },
         ],
       }),
     ],
