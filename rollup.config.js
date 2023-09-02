@@ -80,7 +80,7 @@ export default [
       copy({
         targets: [
           {
-            src: 'public/index.html',
+            src: 'public/*',
             dest: 'dist/web',
           },
           {
