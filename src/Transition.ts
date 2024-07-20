@@ -1,6 +1,10 @@
 import { Input, State, StateSet } from './FiniteStateMachine';
 import { CFGInput, ContextFreeGrammar } from './ContextFreeGrammar';
-import { PushdownAutomaton, PDATransform, PDATransformTable } from './PushdownAutomata';
+import {
+  PushdownAutomaton,
+  PDATransform,
+  PDATransformTable,
+} from './PushdownAutomata';
 
 import { ExtendSet } from './utils';
 
@@ -12,7 +16,10 @@ export const CFG2PDA = (cfg: ContextFreeGrammar) => {
     [
       loop,
       new PDATransform([
-        [CFGInput.EPSILON, new ExtendSet([[accept, Input.$, CFGInput.EPSILON]])], // LOOP + ε,$->ε = ACCEPT
+        [
+          CFGInput.EPSILON,
+          new ExtendSet([[accept, Input.$, CFGInput.EPSILON]]),
+        ], // LOOP + ε,$->ε = ACCEPT
       ]),
     ],
   ]);

@@ -44,7 +44,9 @@ export class ExtendSet<T> extends Set<T> {
 
     helper(0, new ExtendSet());
 
-    return new ExtendSet<ExtendSet<T>>(set.vs().sort((a, b) => a.vs().length - b.vs().length));
+    return new ExtendSet<ExtendSet<T>>(
+      set.vs().sort((a, b) => a.vs().length - b.vs().length),
+    );
   }
 
   addMultiple(items: ExtendSet<T>): void;
@@ -75,7 +77,9 @@ export class ExtendSet<T> extends Set<T> {
   }
 
   static union<P>(...sets: ExtendSet<P>[]) {
-    return new ExtendSet<P>(sets.map((s) => s.vs()).reduce((prev, curr) => [...prev, ...curr], []));
+    return new ExtendSet<P>(
+      sets.map(s => s.vs()).reduce((prev, curr) => [...prev, ...curr], []),
+    );
   }
 }
 
@@ -110,20 +114,25 @@ export class ExtendArray<T> extends Array<T> {
 }
 
 export const repeat = <T>(x: T, length: number): T[] => {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   // eslint-disable-next-line prefer-spread
   return Array.apply(null, { length }).map(() => x);
 };
 
 export const flattern = (arr: any[]): any[] => {
-  return arr.reduce((prev, curr) => [
-    ...prev,
-    ...Array.isArray(curr) ? flattern(curr) : [curr],
-  ], []);
+  return arr.reduce(
+    (prev, curr) => [
+      ...prev,
+      ...(Array.isArray(curr) ? flattern(curr) : [curr]),
+    ],
+    [],
+  );
 };
 
-export const call = async <T extends (...args: Param[]) => any, Param>(fn: T, ...param: Param[]) => {
+export const call = async <T extends (...args: Param[]) => any, Param>(
+  fn: T,
+  ...param: Param[]
+) => {
   if (typeof fn !== 'function') return Promise.resolve(fn);
 
   // eslint-disable-next-line no-nested-ternary

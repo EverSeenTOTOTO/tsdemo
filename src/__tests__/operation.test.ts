@@ -20,15 +20,7 @@ describe('test Operation', () => {
     const N1 = new NondeterministicFiniteAutomachine(
       'N1',
       new NFATransformTable([
-        [
-          q1,
-          new NFATransform([
-            [
-              a,
-              new StateSet([q2]),
-            ],
-          ]),
-        ],
+        [q1, new NFATransform([[a, new StateSet([q2])]])],
       ]),
       q1,
       new StateSet([q2]),
@@ -36,24 +28,8 @@ describe('test Operation', () => {
     const N2 = new NondeterministicFiniteAutomachine(
       'N2',
       new NFATransformTable([
-        [
-          q1,
-          new NFATransform([
-            [
-              a,
-              new StateSet([q3]),
-            ],
-          ]),
-        ],
-        [
-          q2,
-          new NFATransform([
-            [
-              b,
-              new StateSet([q3]),
-            ],
-          ]),
-        ],
+        [q1, new NFATransform([[a, new StateSet([q3])]])],
+        [q2, new NFATransform([[b, new StateSet([q3])]])],
       ]),
       q2,
       new StateSet([q3]),
@@ -70,36 +46,16 @@ describe('test Operation', () => {
       N1.initialState,
       N2.initialState,
     ]);
-    expect(U.next(a, q1).vs()).toEqual([
-      q2, q3,
-    ]);
-    expect(U.next(b, q2).vs()).toEqual([
-      q3,
-    ]);
+    expect(U.next(a, q1).vs()).toEqual([q2, q3]);
+    expect(U.next(b, q2).vs()).toEqual([q3]);
   });
 
   test('test concat', () => {
     const N1 = new NondeterministicFiniteAutomachine(
       'N1',
       new NFATransformTable([
-        [
-          q1,
-          new NFATransform([
-            [
-              a,
-              new StateSet([q2]),
-            ],
-          ]),
-        ],
-        [
-          q2,
-          new NFATransform([
-            [
-              b,
-              new StateSet([q3]),
-            ],
-          ]),
-        ],
+        [q1, new NFATransform([[a, new StateSet([q2])]])],
+        [q2, new NFATransform([[b, new StateSet([q3])]])],
       ]),
       q1,
       new StateSet([q2, q3]),
@@ -107,24 +63,8 @@ describe('test Operation', () => {
     const N2 = new NondeterministicFiniteAutomachine(
       'N2',
       new NFATransformTable([
-        [
-          q3,
-          new NFATransform([
-            [
-              a,
-              new StateSet([q1, q4]),
-            ],
-          ]),
-        ],
-        [
-          q2,
-          new NFATransform([
-            [
-              b,
-              new StateSet([q4]),
-            ],
-          ]),
-        ],
+        [q3, new NFATransform([[a, new StateSet([q1, q4])]])],
+        [q2, new NFATransform([[b, new StateSet([q4])]])],
       ]),
       q3,
       new StateSet([q4]),
@@ -134,39 +74,17 @@ describe('test Operation', () => {
 
     expect(C.initialState).toBe(N1.initialState);
     expect(C.finalStates).toEqual(N2.finalStates);
-    expect(C.next(a, q3).vs()).toEqual([
-      q1, q4,
-    ]);
-    expect(C.next(b, q2).vs()).toEqual([
-      q3, q4,
-    ]);
-    expect(C.next(Input.EPSILON, q3).vs()).toEqual([
-      q3,
-    ]);
+    expect(C.next(a, q3).vs()).toEqual([q1, q4]);
+    expect(C.next(b, q2).vs()).toEqual([q3, q4]);
+    expect(C.next(Input.EPSILON, q3).vs()).toEqual([q3]);
   });
 
   test('test star', () => {
     const N = new NondeterministicFiniteAutomachine(
       'N',
       new NFATransformTable([
-        [
-          q1,
-          new NFATransform([
-            [
-              a,
-              new StateSet([q2]),
-            ],
-          ]),
-        ],
-        [
-          q2,
-          new NFATransform([
-            [
-              Input.EPSILON,
-              new StateSet([q2]),
-            ],
-          ]),
-        ],
+        [q1, new NFATransform([[a, new StateSet([q2])]])],
+        [q2, new NFATransform([[Input.EPSILON, new StateSet([q2])]])],
       ]),
       q1,
       new StateSet([q2]),
@@ -174,31 +92,16 @@ describe('test Operation', () => {
 
     const S = star(N);
 
-    expect(S.finalStates.vs()).toEqual([
-      ...N.finalStates.vs(),
-      S.initialState,
-    ]);
-    expect(S.next(Input.EPSILON, S.initialState).vs()).toEqual([
-      q1,
-    ]);
-    expect(S.next(Input.EPSILON, q2).vs()).toEqual([
-      q2, q1,
-    ]);
+    expect(S.finalStates.vs()).toEqual([...N.finalStates.vs(), S.initialState]);
+    expect(S.next(Input.EPSILON, S.initialState).vs()).toEqual([q1]);
+    expect(S.next(Input.EPSILON, q2).vs()).toEqual([q2, q1]);
   });
 
   test('test combine operations', () => {
     const N1 = new NondeterministicFiniteAutomachine(
       'N1',
       new NFATransformTable([
-        [
-          q1,
-          new NFATransform([
-            [
-              a,
-              new StateSet([q2]),
-            ],
-          ]),
-        ],
+        [q1, new NFATransform([[a, new StateSet([q2])]])],
       ]),
       q1,
       new StateSet([q2]),
@@ -206,21 +109,17 @@ describe('test Operation', () => {
     const N2 = new NondeterministicFiniteAutomachine(
       'N2',
       new NFATransformTable([
-        [
-          q2,
-          new NFATransform([
-            [
-              b,
-              new StateSet([q3]),
-            ],
-          ]),
-        ],
+        [q2, new NFATransform([[b, new StateSet([q3])]])],
       ]),
       q2,
       new StateSet([q3]),
     );
 
-    const next = (nfa: NondeterministicFiniteAutomachine, input: Input, state?: State) => nfa.next(input, state).vs()[0];
+    const next = (
+      nfa: NondeterministicFiniteAutomachine,
+      input: Input,
+      state?: State,
+    ) => nfa.next(input, state).vs()[0];
 
     const C = concat(N1, N2);
     const accept = next(C, b, next(C, a));

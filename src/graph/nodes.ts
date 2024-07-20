@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable class-methods-use-this */
 /* eslint-disable max-classes-per-file */
 import { Slot, Node, IContext } from './index';
@@ -6,10 +5,7 @@ import { Slot, Node, IContext } from './index';
 export class UnaryNode<I, O> extends Node<'input' | 'output', I, O> {
   constructor(name: string) {
     super(name);
-    this.slots = [
-      new Slot('input', this),
-      new Slot('output', this),
-    ];
+    this.slots = [new Slot('input', this), new Slot('output', this)];
   }
 }
 
@@ -19,7 +15,7 @@ export class PipeNode<I, O> extends UnaryNode<I, O> {
     const output = this.getSlot('output')!;
     const connections = ctx.getConnectionsByFrom(output);
 
-    connections.forEach((c) => {
+    connections.forEach(c => {
       c.to.node.emit(c.to.name, value, ctx);
     });
   }
@@ -30,7 +26,7 @@ export class SteppedPipeNode<I, O> extends UnaryNode<I, O> {
     const output = this.getSlot('output')!;
     const connections = ctx.getConnectionsByFrom(output);
 
-    connections.forEach((c) => {
+    connections.forEach(c => {
       ctx.executor.submit({
         action() {
           c.to.node.emit(c.to.name, value, ctx);
@@ -61,14 +57,17 @@ export class BinaryNode<I, O> extends Node<'lhs' | 'rhs' | 'output', I, O> {
     this.handle(input, value, ctx);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   handle(_input: 'lhs' | 'rhs', _value: I, _ctx: IContext) {
     throw new Error('Method not implemented');
   }
 }
 
 // for test
-export function createStore<S extends string, I, O>(ctx: IContext, name: string, slots: S[]) {
+export function createStore<S extends string, I, O>(
+  ctx: IContext,
+  name: string,
+  slots: S[],
+) {
   return new (class StoreNode extends Node<S, I, O> {
     state: Record<S, I> = Object(null);
 
@@ -76,7 +75,7 @@ export function createStore<S extends string, I, O>(ctx: IContext, name: string,
 
     constructor() {
       super(name);
-      this.slots = slots.map((s) => new Slot(s, this));
+      this.slots = slots.map(s => new Slot(s, this));
       ctx.addNodes(this);
     }
 
@@ -85,7 +84,6 @@ export function createStore<S extends string, I, O>(ctx: IContext, name: string,
       this.record = [];
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     emit(slot: S, value: I, _ctx: IContext) {
       this.state[slot] = value;
       this.record.push([slot, value]);

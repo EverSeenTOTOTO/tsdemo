@@ -30,7 +30,12 @@ export class Position {
   }
 }
 
-export const codeFrame = (input: string, message: string, start: Position, end?: Position): string => {
+export const codeFrame = (
+  input: string,
+  message: string,
+  start: Position,
+  end?: Position,
+): string => {
   return codeFrameColumns(
     input,
     {
@@ -40,9 +45,9 @@ export const codeFrame = (input: string, message: string, start: Position, end?:
       },
       end: end
         ? {
-          line: end.line + 1,
-          column: end.column + 1,
-        }
+            line: end.line + 1,
+            column: end.column + 1,
+          }
         : undefined,
     },
     {
@@ -52,12 +57,16 @@ export const codeFrame = (input: string, message: string, start: Position, end?:
 };
 
 export type Token = {
-  readonly type: 'id' | 'space' | 'eof' | '~' | '+' | '(' | ')',
-  readonly source: string,
-  readonly pos: Position
+  readonly type: 'id' | 'space' | 'eof' | '~' | '+' | '(' | ')';
+  readonly source: string;
+  readonly pos: Position;
 };
 
-export const makeToken = (type: Token['type'], pos: Position, source: string): Token => {
+export const makeToken = (
+  type: Token['type'],
+  pos: Position,
+  source: string,
+): Token => {
   const snapshot = pos.clone();
 
   pos.column += source.length;
@@ -79,7 +88,9 @@ export function raise(input: string, pos: Position): Token {
   if (/\s/.test(pivot)) return readWhitespace(input, pos);
   if (/~|\+|\(|\)/.test(pivot)) return makeToken(pivot as '~', pos, pivot);
 
-  throw new Error(codeFrame(input, `Syntax error, unrecogonized character: ${pivot}`, pos));
+  throw new Error(
+    codeFrame(input, `Syntax error, unrecogonized character: ${pivot}`, pos),
+  );
 }
 
 const ID_REGEX = /^[A-Z][0-9]*/;
@@ -99,7 +110,8 @@ export function readIdentifier(input: string, pos: Position): Token {
 export function readWhitespace(input: string, pos: Position): Token {
   const backup = pos.clone();
 
-  if (/^\r\n/.test(input.slice(pos.cursor))) { // \r\n first
+  if (/^\r\n/.test(input.slice(pos.cursor))) {
+    // \r\n first
     pos.cursor += 2;
     pos.line += 1;
     pos.column = 0;
@@ -114,7 +126,11 @@ export function readWhitespace(input: string, pos: Position): Token {
     throw new Error(codeFrame(input, 'Syntax error, expected <space>', pos));
   }
 
-  return { type: 'space', source: input.slice(0, pos.cursor - backup.cursor), pos: backup };
+  return {
+    type: 'space',
+    source: input.slice(0, pos.cursor - backup.cursor),
+    pos: backup,
+  };
 }
 
 export function skipWhitespace(input: string, pos: Position) {
@@ -135,12 +151,20 @@ export function lookahead(input: string, pos: Position) {
 }
 
 // try read expected token, throw if fail
-export function expect(expected: Token['type'] | Token['type'][], input: string, pos: Position) {
+export function expect(
+  expected: Token['type'] | Token['type'][],
+  input: string,
+  pos: Position,
+) {
   const token = raise(input, pos);
   const types = Array.isArray(expected) ? expected : [expected];
 
   if (types.indexOf(token.type) === -1) {
-    const message = codeFrame(input, `Syntax error, expect "${types.join(',')}", got ${token.type}`, pos);
+    const message = codeFrame(
+      input,
+      `Syntax error, expect "${types.join(',')}", got ${token.type}`,
+      pos,
+    );
 
     pos.copy(token.pos); // rollback
 
@@ -280,7 +304,9 @@ function parseLeading(source: string, pos: Position) {
     case 'id':
       return parseId(source, pos);
     default:
-      throw new Error(codeFrame(source, `Syntax error, unexpect token: ${next.type}`, pos));
+      throw new Error(
+        codeFrame(source, `Syntax error, unexpect token: ${next.type}`, pos),
+      );
   }
 }
 

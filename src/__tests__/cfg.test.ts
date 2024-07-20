@@ -23,20 +23,8 @@ describe('test CFG', () => {
             [a, B],
           ]),
         ],
-        [
-          A,
-          new CFGRuleSet([
-            [B],
-            [S],
-          ]),
-        ],
-        [
-          B,
-          new CFGRuleSet([
-            [b],
-            [CFGInput.EPSILON],
-          ]),
-        ],
+        [A, new CFGRuleSet([[B], [S]])],
+        [B, new CFGRuleSet([[b], [CFGInput.EPSILON]])],
       ]),
       S,
     );

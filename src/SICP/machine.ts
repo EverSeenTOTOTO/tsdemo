@@ -5,16 +5,17 @@ type PrimitiveLabel = ['label', string];
 type PrimitiveReg = ['reg', string];
 type PrimitiveOp = ['op', string];
 
-type PrimitiveInst = PrimitiveConst|PrimitiveReg|PrimitiveLabel;
+type PrimitiveInst = PrimitiveConst | PrimitiveReg | PrimitiveLabel;
 
-type AssignInst = ['assign', string, PrimitiveInst]
-| ['assign', string, PrimitiveOp, ...PrimitiveInst[]];
+type AssignInst =
+  | ['assign', string, PrimitiveInst]
+  | ['assign', string, PrimitiveOp, ...PrimitiveInst[]];
 
 type TestInst = ['test', PrimitiveOp, ...PrimitiveInst[]];
 
-type BranchInst = ['branch', PrimitiveLabel|PrimitiveReg];
+type BranchInst = ['branch', PrimitiveLabel | PrimitiveReg];
 
-type GotoInst = ['goto', PrimitiveLabel|PrimitiveReg];
+type GotoInst = ['goto', PrimitiveLabel | PrimitiveReg];
 
 type SaveInst = ['save', string];
 
@@ -22,37 +23,32 @@ type RestoreInst = ['restore', string];
 
 type PerformInst = ['perform', PrimitiveOp, ...PrimitiveInst[]];
 
-export type Instruction = AssignInst
-|TestInst
-|BranchInst
-|GotoInst
-|SaveInst
-|RestoreInst
-|PerformInst;
+export type Instruction =
+  | AssignInst
+  | TestInst
+  | BranchInst
+  | GotoInst
+  | SaveInst
+  | RestoreInst
+  | PerformInst;
 
 export type InstructionNames = Instruction[0];
 
-type CompiledInstruction = [
-  InstructionNames,
-  Operation,
-];
+type CompiledInstruction = [InstructionNames, Operation];
 
-type LabelPosition = [
-  symbol,
-  number,
-];
+type LabelPosition = [symbol, number];
 
 export type Operation = (...args: any[]) => any;
 export type Operations = [string, Operation][];
 
-export type AssembleCode = (Instruction|symbol)[];
+export type AssembleCode = (Instruction | symbol)[];
 
 const getLabel = (label: any) => {
   return typeof label === 'symbol' ? label.description : label;
 };
 
 const lookupLabel = (labels: LabelPosition[], lbl: string) => {
-  const lbls = labels.filter((label) => {
+  const lbls = labels.filter(label => {
     if (Array.isArray(label) && typeof label[0] === 'symbol') {
       return label[0].description === lbl;
     }
@@ -69,7 +65,11 @@ const lookupLabel = (labels: LabelPosition[], lbl: string) => {
   return pos;
 };
 
-const makePrimitiveExp = (exp: PrimitiveInst, labels: LabelPosition[], machine: Machine) => {
+const makePrimitiveExp = (
+  exp: PrimitiveInst,
+  labels: LabelPosition[],
+  machine: Machine,
+) => {
   const [type, input] = exp; // [<const|reg> <input>]
 
   switch (type) {
@@ -84,22 +84,37 @@ const makePrimitiveExp = (exp: PrimitiveInst, labels: LabelPosition[], machine: 
   }
 };
 
-const makeOperationExp = (exp: [PrimitiveOp, ...PrimitiveInst[]], labels: LabelPosition[], machine: Machine) => {
+const makeOperationExp = (
+  exp: [PrimitiveOp, ...PrimitiveInst[]],
+  labels: LabelPosition[],
+  machine: Machine,
+) => {
   const [[, op], ...input] = exp; // [op <op>] <input> ...
 
   const operation = machine.getOperation(op);
-  const callbacks = input.map((arg: any) => makePrimitiveExp(arg, labels, machine));
+  const callbacks = input.map((arg: any) =>
+    makePrimitiveExp(arg, labels, machine),
+  );
 
-  return () => operation(...callbacks.map((cb) => cb()));
+  return () => operation(...callbacks.map(cb => cb()));
 };
 
-const makeAssign = (inst: AssignInst, labels: LabelPosition[], machine: Machine) => {
+const makeAssign = (
+  inst: AssignInst,
+  labels: LabelPosition[],
+  machine: Machine,
+) => {
   const [, name, ...valueExp] = inst;
   const register = machine.getRegister(name);
 
-  const valueProc = valueExp[0][0] === 'op'
-    ? makeOperationExp(valueExp as [PrimitiveOp, ...PrimitiveInst[]], labels, machine) // assign <reg> [op <op>] <input> ...
-    : makePrimitiveExp(valueExp[0], labels, machine); // assign <reg> [<const|reg> <input>]
+  const valueProc =
+    valueExp[0][0] === 'op'
+      ? makeOperationExp(
+          valueExp as [PrimitiveOp, ...PrimitiveInst[]],
+          labels,
+          machine,
+        ) // assign <reg> [op <op>] <input> ...
+      : makePrimitiveExp(valueExp[0], labels, machine); // assign <reg> [<const|reg> <input>]
 
   return () => {
     register.set(valueProc());
@@ -107,10 +122,15 @@ const makeAssign = (inst: AssignInst, labels: LabelPosition[], machine: Machine)
   };
 };
 
-const makeTest = (inst: TestInst, labels: LabelPosition[], machine: Machine) => {
+const makeTest = (
+  inst: TestInst,
+  labels: LabelPosition[],
+  machine: Machine,
+) => {
   const [, ...condition] = inst;
 
-  if (condition[0][0] === 'op') { // test [<op> <input>] ...
+  if (condition[0][0] === 'op') {
+    // test [<op> <input>] ...
     const proc = makeOperationExp(condition, labels, machine);
 
     return () => {
@@ -122,10 +142,15 @@ const makeTest = (inst: TestInst, labels: LabelPosition[], machine: Machine) => 
   throw new Error(`Invalid test ${getLabel(condition[0])}`);
 };
 
-const makeBranch = (inst: BranchInst, labels: LabelPosition[], machine: Machine) => {
+const makeBranch = (
+  inst: BranchInst,
+  labels: LabelPosition[],
+  machine: Machine,
+) => {
   const [, [dest, lbl]] = inst;
 
-  if (dest === 'label') { // branch [label <lbl>]
+  if (dest === 'label') {
+    // branch [label <lbl>]
     return () => {
       const pos = lookupLabel(labels, lbl);
 
@@ -141,10 +166,15 @@ const makeBranch = (inst: BranchInst, labels: LabelPosition[], machine: Machine)
   throw new Error(`Invalid branch ${getLabel(dest)}`);
 };
 
-const makeGoto = (inst: GotoInst, labels: LabelPosition[], machine: Machine) => {
+const makeGoto = (
+  inst: GotoInst,
+  labels: LabelPosition[],
+  machine: Machine,
+) => {
   const [, [dest, lbl]] = inst;
 
-  if (dest === 'label') { // goto [label <lbl>]
+  if (dest === 'label') {
+    // goto [label <lbl>]
     return () => {
       const pos = lookupLabel(labels, lbl);
 
@@ -152,7 +182,8 @@ const makeGoto = (inst: GotoInst, labels: LabelPosition[], machine: Machine) => 
     };
   }
 
-  if (dest === 'reg') { // goto [reg <reg>]
+  if (dest === 'reg') {
+    // goto [reg <reg>]
     return () => {
       const reg = machine.getRegister(lbl);
 
@@ -163,10 +194,15 @@ const makeGoto = (inst: GotoInst, labels: LabelPosition[], machine: Machine) => 
   throw new Error(`Invalid goto ${getLabel(dest)}`);
 };
 
-const makeSave = (inst: SaveInst, _labels: LabelPosition[], machine: Machine) => {
+const makeSave = (
+  inst: SaveInst,
+  _labels: LabelPosition[],
+  machine: Machine,
+) => {
   const [, reg] = inst;
 
-  if (typeof reg === 'string') { // save <reg>
+  if (typeof reg === 'string') {
+    // save <reg>
     return () => {
       const content = machine.getRegisterContent(reg);
 
@@ -178,10 +214,15 @@ const makeSave = (inst: SaveInst, _labels: LabelPosition[], machine: Machine) =>
   throw new Error(`Invalid save ${getLabel(reg)}`);
 };
 
-const makeRestore = (inst: RestoreInst, _labels: LabelPosition[], machine: Machine) => {
+const makeRestore = (
+  inst: RestoreInst,
+  _labels: LabelPosition[],
+  machine: Machine,
+) => {
   const [, reg] = inst;
 
-  if (typeof reg === 'string') { // restore <reg>
+  if (typeof reg === 'string') {
+    // restore <reg>
     return () => {
       const content = machine.popStack();
 
@@ -193,15 +234,21 @@ const makeRestore = (inst: RestoreInst, _labels: LabelPosition[], machine: Machi
   throw new Error(`Invalid restore ${getLabel(reg)}`);
 };
 
-const makePerform = (inst: PerformInst, labels: LabelPosition[], machine: Machine) => {
+const makePerform = (
+  inst: PerformInst,
+  labels: LabelPosition[],
+  machine: Machine,
+) => {
   const [, [op, oprand], ...input] = inst; // perform [op <op>] <input> ...
 
   if (op === 'op') {
     const operation = machine.getOperation(oprand);
-    const callbacks = input.map((arg: any) => makePrimitiveExp(arg, labels, machine));
+    const callbacks = input.map((arg: any) =>
+      makePrimitiveExp(arg, labels, machine),
+    );
 
     return () => {
-      operation(...callbacks.map((cb) => cb()));
+      operation(...callbacks.map(cb => cb()));
       machine.advancePC();
     };
   }
@@ -209,7 +256,11 @@ const makePerform = (inst: PerformInst, labels: LabelPosition[], machine: Machin
   throw new Error(`Invalid perform ${getLabel(op)}`);
 };
 
-const makeExecutionProcedure = (inst: Instruction, labels: LabelPosition[], machine: Machine) => {
+const makeExecutionProcedure = (
+  inst: Instruction,
+  labels: LabelPosition[],
+  machine: Machine,
+) => {
   switch (inst[0]) {
     case 'assign':
       return makeAssign(inst, labels, machine);
@@ -238,7 +289,10 @@ const assemble = (code: AssembleCode, machine: Machine) => {
     if (typeof inst === 'symbol') {
       labels.push([inst, code.indexOf(inst) - labels.length]); // 记录label在指令中的位置，但是要减去已经出现的label数量，因为编译后的指令序列不含label
     } else {
-      compiledInsts.push([inst[0], makeExecutionProcedure(inst, labels, machine)]);
+      compiledInsts.push([
+        inst[0],
+        makeExecutionProcedure(inst, labels, machine),
+      ]);
     }
   }
 
@@ -310,7 +364,7 @@ export class Machine {
 
   private step() {
     const pos = this.pc.get();
-    const [,proc] = this.instructions.slice(pos)[0];
+    const [, proc] = this.instructions.slice(pos)[0];
 
     proc();
   }

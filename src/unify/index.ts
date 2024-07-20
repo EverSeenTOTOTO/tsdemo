@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/ban-types */
-export class Expr { }
+export class Expr {}
 
 export class Var extends Expr {
   name: string;
@@ -36,7 +35,7 @@ export class Term extends Expr {
   }
 
   resolveWith(variable: Var, value: Expr) {
-    this.atoms = this.atoms.map((each) => {
+    this.atoms = this.atoms.map(each => {
       if (each instanceof Var && isVarEqual(each, variable)) {
         return value;
       }
@@ -50,7 +49,7 @@ export class Term extends Expr {
   }
 
   get [Symbol.toStringTag]() {
-    return this.atoms.map((atom) => atom.toString()).join(', ');
+    return this.atoms.map(atom => atom.toString()).join(', ');
   }
 }
 
@@ -67,7 +66,8 @@ const isConstEqual = (c0: Expr, c1: Expr) => {
   return c0 instanceof Const && c1 instanceof Const && c0.value === c1.value;
 };
 
-const isVarEqual = (v0: Expr, v1: Expr) => v0 instanceof Var && v1 instanceof Var && v0.name === v1.name;
+const isVarEqual = (v0: Expr, v1: Expr) =>
+  v0 instanceof Var && v1 instanceof Var && v0.name === v1.name;
 
 const isTermEqual = (t0: Expr, t1: Expr) => {
   if (t0 instanceof Term && t1 instanceof Term) {
@@ -79,7 +79,8 @@ const isTermEqual = (t0: Expr, t1: Expr) => {
   return false;
 };
 
-export const isEqual = (e0: Expr, e1: Expr): boolean => isConstEqual(e0, e1) || isVarEqual(e0, e1) || isTermEqual(e0, e1);
+export const isEqual = (e0: Expr, e1: Expr): boolean =>
+  isConstEqual(e0, e1) || isVarEqual(e0, e1) || isTermEqual(e0, e1);
 
 export type Dict = Map<string, Expr>;
 
@@ -89,19 +90,25 @@ export const eliminateVariables = (expr: Expr, dict: Dict): Expr => {
   }
 
   if (expr instanceof Term) {
-    return new Term(expr.atoms.map((atom) => eliminateVariables(atom, dict)));
+    return new Term(expr.atoms.map(atom => eliminateVariables(atom, dict)));
   }
 
   return expr;
 };
 
-export const unify = (pattern1: Expr, pattern2: Expr, dict: Dict = new Map()) => {
+export const unify = (
+  pattern1: Expr,
+  pattern2: Expr,
+  dict: Dict = new Map(),
+) => {
   return dispatch(
     pattern1,
     pattern2,
     dict,
     () => eliminateVariables(pattern1, dict),
-    (e) => { throw e; },
+    e => {
+      throw e;
+    },
   );
 };
 
@@ -113,7 +120,9 @@ const unifier = (
   onFail: (e: Error) => void,
 ): Expr | void => {
   if (pattern1.length !== pattern2.length) {
-    return onFail(new Error(`length not equal:\n\t${pattern1}\n\t${pattern2})}`));
+    return onFail(
+      new Error(`length not equal:\n\t${pattern1}\n\t${pattern2})}`),
+    );
   }
 
   if (pattern1.length === 0) {
@@ -124,13 +133,8 @@ const unifier = (
     pattern1[0],
     pattern2[0],
     dict,
-    () => unifier(
-      pattern1.slice(1),
-      pattern2.slice(1),
-      dict,
-      onSuccess,
-      onFail,
-    ),
+    () =>
+      unifier(pattern1.slice(1), pattern2.slice(1), dict, onSuccess, onFail),
     onFail,
   );
 };
@@ -142,101 +146,109 @@ const dispatch = (
   onSuccess: () => Expr | void,
   onFail: (e: Error) => void,
 ): Expr | void => {
-  return match(term1, term2, [
-    [Const, Const,
-      (c1, c2) => (isConstEqual(c1, c2) ? onSuccess() : onFail(new Error(`${c1} !== ${c2}`)))],
+  return match(
+    term1,
+    term2,
+    [
+      [
+        Const,
+        Const,
+        (c1, c2) =>
+          isConstEqual(c1, c2)
+            ? onSuccess()
+            : onFail(new Error(`${c1} !== ${c2}`)),
+      ],
 
-    [Const, Var,
-      (c1, v2) => {
-        if (dict.has(v2.name)) {
-          return dispatch(c1, dict.get(v2.name)!, dict, onSuccess, onFail);
-        }
+      [
+        Const,
+        Var,
+        (c1, v2) => {
+          if (dict.has(v2.name)) {
+            return dispatch(c1, dict.get(v2.name)!, dict, onSuccess, onFail);
+          }
 
-        dict.set(v2.name, c1);
+          dict.set(v2.name, c1);
 
-        return flushDict(
-          v2,
-          c1,
-          dict,
-          onSuccess,
-          onFail,
-        );
-      }],
+          return flushDict(v2, c1, dict, onSuccess, onFail);
+        },
+      ],
 
-    [Const, Term,
-      (c1, t2) => onFail(new Error(`match constant and term\n\t${c1}\n\t${t2}`))],
+      [
+        Const,
+        Term,
+        (c1, t2) =>
+          onFail(new Error(`match constant and term\n\t${c1}\n\t${t2}`)),
+      ],
 
-    [Var, Const,
-      (v1, c2) => dispatch(c2, v1, dict, onSuccess, onFail)],
+      [Var, Const, (v1, c2) => dispatch(c2, v1, dict, onSuccess, onFail)],
 
-    [Var, Var,
-      (v1, v2) => {
-        if (isVarEqual(v1, v2)) return onSuccess();
+      [
+        Var,
+        Var,
+        (v1, v2) => {
+          if (isVarEqual(v1, v2)) return onSuccess();
 
-        if (dict.has(v1.name)) {
-          return dispatch(dict.get(v1.name)!, v2, dict, onSuccess, onFail);
-        }
-        if (dict.has(v2.name)) {
-          return dispatch(v1, dict.get(v2.name)!, dict, onSuccess, onFail);
-        }
+          if (dict.has(v1.name)) {
+            return dispatch(dict.get(v1.name)!, v2, dict, onSuccess, onFail);
+          }
+          if (dict.has(v2.name)) {
+            return dispatch(v1, dict.get(v2.name)!, dict, onSuccess, onFail);
+          }
 
-        dict.set(v1.name, v2);
+          dict.set(v1.name, v2);
 
-        return onSuccess();
-      }],
+          return onSuccess();
+        },
+      ],
 
-    [Var, Term,
-      (v1, t2) => {
-        const newTerm = eliminateVariables(t2, dict) as Term;
+      [
+        Var,
+        Term,
+        (v1, t2) => {
+          const newTerm = eliminateVariables(t2, dict) as Term;
 
-        if (newTerm.atoms.some((atom) => isVarEqual(atom as Var, v1))) {
-          return onFail(new Error(`recursive variable in term\n\t${v1}\n\t${t2}`));
-        }
-
-        const onOk = () => {
-          dict.set(v1.name, newTerm);
-
-          if (isConst(newTerm)) {
-            return flushDict(
-              v1,
-              newTerm,
-              dict,
-              onSuccess,
-              onFail,
+          if (newTerm.atoms.some(atom => isVarEqual(atom as Var, v1))) {
+            return onFail(
+              new Error(`recursive variable in term\n\t${v1}\n\t${t2}`),
             );
           }
 
-          return onSuccess();
-        };
+          const onOk = () => {
+            dict.set(v1.name, newTerm);
 
-        if (dict.has(v1.name)) {
-          return dispatch(dict.get(v1.name)!, newTerm, dict, onOk, onFail);
-        }
+            if (isConst(newTerm)) {
+              return flushDict(v1, newTerm, dict, onSuccess, onFail);
+            }
 
-        return onOk();
-      }],
+            return onSuccess();
+          };
 
-    [Term, Const,
-      (t1, c2) => dispatch(c2, t1, dict, onSuccess, onFail)],
+          if (dict.has(v1.name)) {
+            return dispatch(dict.get(v1.name)!, newTerm, dict, onOk, onFail);
+          }
 
-    [Term, Var,
-      (t1, v2) => dispatch(v2, t1, dict, onSuccess, onFail)],
+          return onOk();
+        },
+      ],
 
-    [Term, Term,
-      (t1, t2) => {
-        if (t1.atoms.length !== t2.atoms.length) {
-          return onFail(new Error(`atom length not equal\n\t${t1}\n\t${t2}`));
-        }
+      [Term, Const, (t1, c2) => dispatch(c2, t1, dict, onSuccess, onFail)],
 
-        return unifier(
-          t1.atoms,
-          t2.atoms,
-          dict,
-          onSuccess,
-          onFail,
-        );
-      }],
-  ], onFail);
+      [Term, Var, (t1, v2) => dispatch(v2, t1, dict, onSuccess, onFail)],
+
+      [
+        Term,
+        Term,
+        (t1, t2) => {
+          if (t1.atoms.length !== t2.atoms.length) {
+            return onFail(new Error(`atom length not equal\n\t${t1}\n\t${t2}`));
+          }
+
+          return unifier(t1.atoms, t2.atoms, dict, onSuccess, onFail);
+        },
+      ],
+    ],
+    onFail,
+  );
 };
 
 const match = <T1 extends Expr, T2 extends Expr, R>(
@@ -280,7 +292,11 @@ const flushDict = (
     }
   }
 
-  const helper = (list: typeof newResolved, onOk: typeof onSuccess, onError: typeof onFail): ReturnType<typeof onSuccess> => {
+  const helper = (
+    list: typeof newResolved,
+    onOk: typeof onSuccess,
+    onError: typeof onFail,
+  ): ReturnType<typeof onSuccess> => {
     if (list.length === 0) return onOk();
 
     const first = list[0];

@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-underscore-dangle */
-/* eslint-disable @typescript-eslint/naming-convention */
 declare let __DEV__: boolean;
 
 declare module '*.macro' {
@@ -16,8 +14,11 @@ declare module '*.svelte' {
 declare module '@babel/code-frame' {
   export function codeFrameColumns(
     input: string,
-    loc: { start: { line: number, column: number }, end?: { line: number, column: number } },
-    options: any
+    loc: {
+      start: { line: number; column: number };
+      end?: { line: number; column: number };
+    },
+    options: any,
   ): string;
 }
 

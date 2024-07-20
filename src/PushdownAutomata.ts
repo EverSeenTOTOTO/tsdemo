@@ -1,12 +1,7 @@
 /* eslint-disable max-classes-per-file */
 import Table from 'cli-table';
 import { ExtendMap, ExtendSet, flattern } from '@/utils';
-import {
-  Input,
-  State,
-  InputSet,
-  StateSet,
-} from './FiniteStateMachine';
+import { Input, State, InputSet, StateSet } from './FiniteStateMachine';
 
 export class PDAStack<I extends Input = Input> extends Array<I> {
   replace(input: I) {
@@ -20,12 +15,25 @@ export class PDAStack<I extends Input = Input> extends Array<I> {
 // [系统状态，ε, x] 表示压入字符x
 // [系统状态，x, ε] 表示弹出字符x
 // [系统状态，x, y] 表示弹出字符x，压入字符y
-export type PDARecord<S extends State = State, I extends Input = Input> = [S, I, I];
-export class PDATransform<S extends State = State, I extends Input = Input> extends ExtendMap<I, ExtendSet<PDARecord<S, I>>> {}
-export class PDATransformTable<S extends State = State, I extends Input = Input> extends ExtendMap<S, PDATransform<S, I>> {}
+export type PDARecord<S extends State = State, I extends Input = Input> = [
+  S,
+  I,
+  I,
+];
+export class PDATransform<
+  S extends State = State,
+  I extends Input = Input,
+> extends ExtendMap<I, ExtendSet<PDARecord<S, I>>> {}
+export class PDATransformTable<
+  S extends State = State,
+  I extends Input = Input,
+> extends ExtendMap<S, PDATransform<S, I>> {}
 
 // 非确定性的
-export class PushdownAutomaton<S extends State = State, I extends Input = Input> {
+export class PushdownAutomaton<
+  S extends State = State,
+  I extends Input = Input,
+> {
   readonly name: string;
 
   readonly transforms: PDATransformTable<S, I>;
@@ -34,7 +42,12 @@ export class PushdownAutomaton<S extends State = State, I extends Input = Input>
 
   readonly finalStates: StateSet<S>;
 
-  constructor(name: string, transforms: PDATransformTable<S, I>, initialState: S, finalStates: StateSet<S>) {
+  constructor(
+    name: string,
+    transforms: PDATransformTable<S, I>,
+    initialState: S,
+    finalStates: StateSet<S>,
+  ) {
     this.name = name;
     this.initialState = initialState;
     this.finalStates = finalStates;
@@ -42,16 +55,25 @@ export class PushdownAutomaton<S extends State = State, I extends Input = Input>
   }
 
   get stateSet(): StateSet<S> {
-    return new StateSet<S>([
-      this.initialState,
-      ...[...this.transforms.keys()].map((state) => state),
-      ...this.finalStates.vs(),
-    ].sort((a, b) => (a.name < b.name ? -1 : 0)));
+    return new StateSet<S>(
+      [
+        this.initialState,
+        ...[...this.transforms.keys()].map(state => state),
+        ...this.finalStates.vs(),
+      ].sort((a, b) => (a.name < b.name ? -1 : 0)),
+    );
   }
 
   get inputSet(): InputSet<I> {
-    return new InputSet<I>(flattern(this.transforms.vs()
-      .map((transform) => [...transform.keys()].sort((a, b) => (a.name < b.name ? -1 : 0)))));
+    return new InputSet<I>(
+      flattern(
+        this.transforms
+          .vs()
+          .map(transform =>
+            [...transform.keys()].sort((a, b) => (a.name < b.name ? -1 : 0)),
+          ),
+      ),
+    );
   }
 
   isFinal(state: S) {
@@ -67,25 +89,40 @@ export class PushdownAutomaton<S extends State = State, I extends Input = Input>
   }
 
   toString() {
-    const inputs = this.inputSet.vs().sort((a, b) => (a.name < b.name ? -1 : 0));
+    const inputs = this.inputSet
+      .vs()
+      .sort((a, b) => (a.name < b.name ? -1 : 0));
     const transformTable = new Table({
-      rows: flattern(this.transforms.ks().map((state) => {
-        const transform = this.transforms.get(state);
-        return transform!.ks().map((input) => {
-          const next = transform!.get(input);
-          return next!.vs().map((result) => {
-            return `${state.name} + [${input.name},${result[1].name}->${result[2].name}] = ${result[0].name}`;
+      rows: flattern(
+        this.transforms.ks().map(state => {
+          const transform = this.transforms.get(state);
+          return transform!.ks().map(input => {
+            const next = transform!.get(input);
+            return next!.vs().map(result => {
+              return `${state.name} + [${input.name},${result[1].name}->${result[2].name}] = ${result[0].name}`;
+            });
           });
-        });
-      }))
-        .map((x) => [x]),
+        }),
+      ).map(x => [x]),
     });
     const table = new Table({
       rows: [
         ['PDA', this.name],
-        ['inputSet', `${inputs.map((input) => input.name).join(', ')}`],
-        ['stateSet', `${this.stateSet.vs().map((state) => state.name).join(', ')}`],
-        ['finalStates', `${this.finalStates.vs().map((state) => state.name).join(', ')}`],
+        ['inputSet', `${inputs.map(input => input.name).join(', ')}`],
+        [
+          'stateSet',
+          `${this.stateSet
+            .vs()
+            .map(state => state.name)
+            .join(', ')}`,
+        ],
+        [
+          'finalStates',
+          `${this.finalStates
+            .vs()
+            .map(state => state.name)
+            .join(', ')}`,
+        ],
         ['transforms', transformTable],
       ],
     });

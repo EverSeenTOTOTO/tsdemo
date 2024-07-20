@@ -38,7 +38,10 @@ export class MergedState<S extends State = State> extends State {
 
 // 给定子集，在全部子集中找到相等的集合，避免new两个相同的集合进行相等比较
 // 早先的实现时在全集里面找，但是求全部子集时若元素较多会栈溢出
-export const findStateInSubstates = <S extends State = State>(sets: StateSet<MergedState<S>>, states: StateSet<S>) => {
+export const findStateInSubstates = <S extends State = State>(
+  sets: StateSet<MergedState<S>>,
+  states: StateSet<S>,
+) => {
   for (const set of sets) {
     if (StateSet.isSame(set.states, states)) {
       return set;
@@ -46,7 +49,13 @@ export const findStateInSubstates = <S extends State = State>(sets: StateSet<Mer
   }
 
   // 如果没有就新增
-  const newSubState = new MergedState<S>(states.vs().map((s) => s.name).join(' '), states);
+  const newSubState = new MergedState<S>(
+    states
+      .vs()
+      .map(s => s.name)
+      .join(' '),
+    states,
+  );
 
   sets.add(newSubState);
 
@@ -58,7 +67,10 @@ export const findStateInSubstates = <S extends State = State>(sets: StateSet<Mer
  * @param {StateSet} current - 当前状态
  * @returns {StateSet} 经过EPSILON可到达的下一个状态集
  */
-export function getEpsilonNextStates<S extends State = State, I extends Input = Input>(nfa: NondeterministicFiniteAutomachine<S, I>, current: S): StateSet<S> {
+export function getEpsilonNextStates<
+  S extends State = State,
+  I extends Input = Input,
+>(nfa: NondeterministicFiniteAutomachine<S, I>, current: S): StateSet<S> {
   const nextStates = new StateSet<S>();
 
   const helper = (states: StateSet<S>) => {
@@ -82,7 +94,11 @@ export function getEpsilonNextStates<S extends State = State, I extends Input = 
  * @param {State} state - 当前状态
  * @returns {StateSet} 下一个状态集合
  */
-export function getNextStates<S extends State = State, I extends Input = Input>(nfa: NondeterministicFiniteAutomachine<S, I>, input: I, current: S): StateSet<S> {
+export function getNextStates<S extends State = State, I extends Input = Input>(
+  nfa: NondeterministicFiniteAutomachine<S, I>,
+  input: I,
+  current: S,
+): StateSet<S> {
   const nextStates = new StateSet<S>();
 
   nextStates.addMultiple(nfa.next(input, current));
@@ -94,7 +110,13 @@ export function getNextStates<S extends State = State, I extends Input = Input>(
   return nextStates;
 }
 
-const computeReachableStates = <S extends State = State, I extends Input = Input>(nfa: NondeterministicFiniteAutomachine<S, I>, state: S): NFATransform<S, I> => {
+const computeReachableStates = <
+  S extends State = State,
+  I extends Input = Input,
+>(
+  nfa: NondeterministicFiniteAutomachine<S, I>,
+  state: S,
+): NFATransform<S, I> => {
   const reachableStates = new NFATransform<S, I>();
 
   for (const input of nfa.inputSet) {
@@ -111,7 +133,9 @@ const computeReachableStates = <S extends State = State, I extends Input = Input
  * @param {NondeterministicFiniteAutomachine} nfa - NFA
  * @returns {DeterministicFinitAutomachine} DFA
  */
-export const NFA2DFA = <S extends State = State, I extends Input = Input>(nfa: NondeterministicFiniteAutomachine<S, I>): DeterministicFinitAutomachine<MergedState<S>, I> => {
+export const NFA2DFA = <S extends State = State, I extends Input = Input>(
+  nfa: NondeterministicFiniteAutomachine<S, I>,
+): DeterministicFinitAutomachine<MergedState<S>, I> => {
   const subsets = new StateSet<MergedState<S>>();
   // 存放NFA中每个小状态针对每个输入（除EPSILON）可到达的状态集合，方便取用
   // 每个集合将成为为一个DFA中的大状态
@@ -137,9 +161,12 @@ export const NFA2DFA = <S extends State = State, I extends Input = Input>(nfa: N
         if (input === Input.EPSILON) continue;
 
         // NFA的小状态到达的状态合并之后是DFA的某个状态
-        const nextStates = current.states.vs()
-          .map((each) => table.get(each)?.get(input) ?? new StateSet<S>())
-          .reduce((p, c) => { return StateSet.union(p, c); });
+        const nextStates = current.states
+          .vs()
+          .map(each => table.get(each)?.get(input) ?? new StateSet<S>())
+          .reduce((p, c) => {
+            return StateSet.union(p, c);
+          });
 
         if (nextStates.length > 0) {
           const nextStateSet = findStateInSubstates<S>(subsets, nextStates);
@@ -154,19 +181,24 @@ export const NFA2DFA = <S extends State = State, I extends Input = Input>(nfa: N
   };
 
   // DFA的起始状态为NFA的起始状态加上该状态经过EPSILON到达的状态集合
-  const initialState = findStateInSubstates(subsets, getEpsilonNextStates(nfa, nfa.initialState));
+  const initialState = findStateInSubstates(
+    subsets,
+    getEpsilonNextStates(nfa, nfa.initialState),
+  );
 
   helper(initialState);
 
   // DFA的终止状态需包含NFA的至少一个接受状态
-  const finalStates = new StateSet(memory.vs().filter((state) => {
-    for (const finalState of nfa.finalStates) {
-      if (state.states.has(finalState)) {
-        return true;
+  const finalStates = new StateSet(
+    memory.vs().filter(state => {
+      for (const finalState of nfa.finalStates) {
+        if (state.states.has(finalState)) {
+          return true;
+        }
       }
-    }
-    return false;
-  }));
+      return false;
+    }),
+  );
 
   return new DeterministicFinitAutomachine(
     nfa.name,
@@ -177,9 +209,14 @@ export const NFA2DFA = <S extends State = State, I extends Input = Input>(nfa: N
 };
 
 // 给定一个输入串，是否可以到达接受状态
-export const accept = <S extends State = State, I extends Input = Input>(machine: DeterministicFinitAutomachine<S, I>|NondeterministicFiniteAutomachine<S, I>, inputs: I[]): boolean => {
+export const accept = <S extends State = State, I extends Input = Input>(
+  machine:
+    | DeterministicFinitAutomachine<S, I>
+    | NondeterministicFiniteAutomachine<S, I>,
+  inputs: I[],
+): boolean => {
   if (machine instanceof DeterministicFinitAutomachine) {
-    let currentState: S|undefined = machine.initialState;
+    let currentState: S | undefined = machine.initialState;
 
     for (const input of inputs) {
       currentState = machine.next(input, currentState);
@@ -197,7 +234,10 @@ export const accept = <S extends State = State, I extends Input = Input>(machine
   return accept(dfa, inputs);
 };
 
-export const run = <S extends State = State, I extends Input = Input>(machine: DeterministicFinitAutomachine<S, I>, inputs: I[]): S[] => {
+export const run = <S extends State = State, I extends Input = Input>(
+  machine: DeterministicFinitAutomachine<S, I>,
+  inputs: I[],
+): S[] => {
   const states = [machine.initialState];
 
   for (const input of inputs) {

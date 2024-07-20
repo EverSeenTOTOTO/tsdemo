@@ -57,13 +57,26 @@ export interface IContext {
   // back(): Promise<void>;
   // prev(): Promise<void>;
 
-  connect<S1, S2, V>(from: INode<S1, any, V>, fromSlot: S1, to: INode<S2, V, any>, toSlot: S2): IConnection<S1, S2>;
-  disconnect<S1, S2, V>(from: INode<S1, any, V>, fromSlot: S1, to: INode<S2, V, any>, toSlot: S2): void;
+  connect<S1, S2, V>(
+    from: INode<S1, any, V>,
+    fromSlot: S1,
+    to: INode<S2, V, any>,
+    toSlot: S2,
+  ): IConnection<S1, S2>;
+  disconnect<S1, S2, V>(
+    from: INode<S1, any, V>,
+    fromSlot: S1,
+    to: INode<S2, V, any>,
+    toSlot: S2,
+  ): void;
 
   contains(x: INode<any, any, any> | IConnection<any, any>): boolean;
 
   getNode(name: string): INode<any, any, any> | undefined;
-  getConnection<S1, S2>(from: ISlot<S1>, to: ISlot<S2>): IConnection<S1, S2> | undefined;
+  getConnection<S1, S2>(
+    from: ISlot<S1>,
+    to: ISlot<S2>,
+  ): IConnection<S1, S2> | undefined;
   getConnectionsByFrom<S>(from: ISlot<S>): IConnection<S, any>[];
   getConnectionsByTo<S>(to: ISlot<S>): IConnection<any, S>[];
 

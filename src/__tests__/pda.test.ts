@@ -1,7 +1,4 @@
-import {
-  Input,
-  State, StateSet,
-} from '@/FiniteStateMachine';
+import { Input, State, StateSet } from '@/FiniteStateMachine';
 import { ExtendSet } from '@/utils';
 import {
   PDATransform,
@@ -52,6 +49,10 @@ describe('test PDA', () => {
     expect(pda.finalStates.vs()).toEqual([q1, q4]);
     expect(pda.inputSet.vs()).toEqual([Input.EPSILON, a, b]);
     expect(pda.stateSet.vs()).toEqual([q1, q2, q3, q4]);
-    expect(pda.next(Input.EPSILON).vs()[0]).toEqual([q2, Input.EPSILON, Input.$]);
+    expect(pda.next(Input.EPSILON).vs()[0]).toEqual([
+      q2,
+      Input.EPSILON,
+      Input.$,
+    ]);
   });
 });

@@ -67,18 +67,62 @@ describe('test DFA', () => {
 
     const M1 = createMachine(q1);
     const r1 = run(M1, [i0, i0, i0, i1, i0, i0, i0, i1, i0]);
-    expect(r1.map((s) => s.output)).toEqual(['0', '1', '0', '0', '0', '1', '0', '0', '0', '1']);
+    expect(r1.map(s => s.output)).toEqual([
+      '0',
+      '1',
+      '0',
+      '0',
+      '0',
+      '1',
+      '0',
+      '0',
+      '0',
+      '1',
+    ]);
 
     const M2 = createMachine(q2);
     const r2 = run(M2, [i0, i0, i0, i1, i0, i0, i0, i1, i0]);
-    expect(r2.map((s) => s.output)).toEqual(['0', '0', '1', '0', '0', '1', '0', '0', '0', '1']);
+    expect(r2.map(s => s.output)).toEqual([
+      '0',
+      '0',
+      '1',
+      '0',
+      '0',
+      '1',
+      '0',
+      '0',
+      '0',
+      '1',
+    ]);
 
     const M3 = createMachine(q3);
     const r3 = run(M3, [i0, i0, i0, i1, i0, i0, i0, i1, i0]);
-    expect(r3.map((s) => s.output)).toEqual(['0', '1', '0', '0', '0', '1', '0', '0', '0', '1']);
+    expect(r3.map(s => s.output)).toEqual([
+      '0',
+      '1',
+      '0',
+      '0',
+      '0',
+      '1',
+      '0',
+      '0',
+      '0',
+      '1',
+    ]);
 
     const M4 = createMachine(q4);
     const r4 = run(M4, [i0, i0, i0, i1, i0, i0, i0, i1, i0]);
-    expect(r4.map((s) => s.output)).toEqual(['1', '0', '0', '1', '0', '0', '1', '0', '0', '1']);
+    expect(r4.map(s => s.output)).toEqual([
+      '1',
+      '0',
+      '0',
+      '1',
+      '0',
+      '0',
+      '1',
+      '0',
+      '0',
+      '1',
+    ]);
   });
 });

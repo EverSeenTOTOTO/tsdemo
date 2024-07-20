@@ -1,12 +1,6 @@
 /* eslint-disable class-methods-use-this */
 /* eslint-disable max-classes-per-file */
-import {
-  ISlot,
-  INode,
-  IConnection,
-  IContext,
-  IExecutor,
-} from './types';
+import { ISlot, INode, IConnection, IContext, IExecutor } from './types';
 
 export * from './types';
 
@@ -49,7 +43,7 @@ export class Node<S, I, O> implements INode<S, I, O> {
   clone(): INode<S, I, O> {
     const node = new Node<S, I, O>(this.name);
 
-    this.slots.forEach((slot) => {
+    this.slots.forEach(slot => {
       node.addSlot(slot.clone());
     });
 
@@ -57,7 +51,7 @@ export class Node<S, I, O> implements INode<S, I, O> {
   }
 
   getSlot(name: S): ISlot<S> | undefined {
-    return this.slots.find((slot) => slot.name === name);
+    return this.slots.find(slot => slot.name === name);
   }
 
   addSlot(slot: ISlot<S>): void {
@@ -74,12 +68,11 @@ export class Node<S, I, O> implements INode<S, I, O> {
     const exist = this.getSlot(slot.name);
 
     if (exist) {
-      this.slots = this.slots.filter((s) => s !== slot);
+      this.slots = this.slots.filter(s => s !== slot);
       ctx?.removeConnectionBySlot(exist);
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   emit(_slot: S, _value: I, _ctx: IContext): void {
     throw new Error('Method not implemented.');
   }
@@ -105,12 +98,12 @@ export class Context implements IContext {
   clone() {
     const ctx = new Context(this.executor.clone());
 
-    this.nodes.forEach((node) => {
+    this.nodes.forEach(node => {
       ctx.addNodes(node.clone());
     });
 
     // cannot clone connection directly
-    this.connections.forEach((connection) => {
+    this.connections.forEach(connection => {
       const from = ctx.getNode(connection.from.node.name);
       const to = ctx.getNode(connection.to.node.name);
 
@@ -138,7 +131,12 @@ export class Context implements IContext {
     return this.executor.next(this);
   }
 
-  connect<S1, S2, V>(from: INode<S1, any, V>, fromSlot: S1, to: INode<S2, V, any>, toSlot: S2): IConnection<S1, S2> {
+  connect<S1, S2, V>(
+    from: INode<S1, any, V>,
+    fromSlot: S1,
+    to: INode<S2, V, any>,
+    toSlot: S2,
+  ): IConnection<S1, S2> {
     const fromS = from.getSlot(fromSlot);
     const toS = to.getSlot(toSlot);
 
@@ -156,12 +154,19 @@ export class Context implements IContext {
     return connection;
   }
 
-  disconnect<S1, S2, V>(from: INode<S1, any, V>, fromSlot: S1, to: INode<S2, V, any>, toSlot: S2): void {
+  disconnect<S1, S2, V>(
+    from: INode<S1, any, V>,
+    fromSlot: S1,
+    to: INode<S2, V, any>,
+    toSlot: S2,
+  ): void {
     const fromS = from.getSlot(fromSlot);
     const toS = to.getSlot(toSlot);
 
     if (fromS && toS) {
-      const idx = this.connections.findIndex((c) => c.from === fromS && c.to === toS);
+      const idx = this.connections.findIndex(
+        c => c.from === fromS && c.to === toS,
+      );
 
       if (idx !== -1) {
         this.connections.splice(idx, 1);
@@ -182,19 +187,22 @@ export class Context implements IContext {
   }
 
   getNode(name: string): INode<any, any, any> | undefined {
-    return this.nodes.find((n) => n.name === name);
+    return this.nodes.find(n => n.name === name);
   }
 
-  getConnection<S1, S2>(from: ISlot<S1>, to: ISlot<S2>): IConnection<S1, S2> | undefined {
-    return this.connections.find((c) => c.from === from && c.to === to);
+  getConnection<S1, S2>(
+    from: ISlot<S1>,
+    to: ISlot<S2>,
+  ): IConnection<S1, S2> | undefined {
+    return this.connections.find(c => c.from === from && c.to === to);
   }
 
   getConnectionsByFrom<S>(from: ISlot<S>): IConnection<S, any>[] {
-    return this.connections.filter((c) => c.from === from);
+    return this.connections.filter(c => c.from === from);
   }
 
   getConnectionsByTo<S>(to: ISlot<S>): IConnection<any, S>[] {
-    return this.connections.filter((c) => c.to === to);
+    return this.connections.filter(c => c.to === to);
   }
 
   addNodes(...nodes: INode<any, any, any>[]) {
@@ -202,7 +210,7 @@ export class Context implements IContext {
   }
 
   removeNode(node: INode<any, any, any>): void {
-    const idx = this.nodes.findIndex((n) => n === node);
+    const idx = this.nodes.findIndex(n => n === node);
 
     if (idx !== -1) {
       this.removeConnectionByNode(node);
@@ -211,10 +219,14 @@ export class Context implements IContext {
   }
 
   removeConnectionBySlot(slot: ISlot<any>): void {
-    this.connections = this.connections.filter((c) => c.from !== slot && c.to !== slot);
+    this.connections = this.connections.filter(
+      c => c.from !== slot && c.to !== slot,
+    );
   }
 
   removeConnectionByNode(node: INode<any, any, any>): void {
-    this.connections = this.connections.filter((c) => c.from.node !== node && c.to.node !== node);
+    this.connections = this.connections.filter(
+      c => c.from.node !== node && c.to.node !== node,
+    );
   }
 }

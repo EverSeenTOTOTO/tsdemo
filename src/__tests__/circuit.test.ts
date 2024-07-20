@@ -1,5 +1,11 @@
 import {
-  createBCD8421, createCD4532, createFullAdder, createHalfAdder, createNBitAdder, createS2, createS4,
+  createBCD8421,
+  createCD4532,
+  createFullAdder,
+  createHalfAdder,
+  createNBitAdder,
+  createS2,
+  createS4,
 } from '@/electron/circuit';
 import { Executor } from '@/graph/executor';
 import { Context } from '@/graph/index';
@@ -42,7 +48,18 @@ it('test CD4532', async () => {
 
 it('test 8421BCD', async () => {
   const BCD8421 = createBCD8421(ctx);
-  const result = createStore(ctx, 'result', ['Y0', 'Y1', 'Y2', 'Y3', 'Y4', 'Y5', 'Y6', 'Y7', 'Y8', 'Y9']);
+  const result = createStore(ctx, 'result', [
+    'Y0',
+    'Y1',
+    'Y2',
+    'Y3',
+    'Y4',
+    'Y5',
+    'Y6',
+    'Y7',
+    'Y8',
+    'Y9',
+  ]);
 
   ctx.connect(BCD8421.Y0, 'output', result, 'Y0');
   ctx.connect(BCD8421.Y1, 'output', result, 'Y1');
@@ -211,7 +228,11 @@ it('test NBitAdder', async () => {
 
   await ctx.run();
   expect(result.state).toEqual({
-    S0: 1, S1: 0, S2: 0, S3: 1, Cout: 1,
+    S0: 1,
+    S1: 0,
+    S2: 0,
+    S3: 1,
+    Cout: 1,
   });
 
   // 1101 + 1100 + 1 = 1101 - 0011 = 1010
@@ -219,6 +240,10 @@ it('test NBitAdder', async () => {
 
   await ctx.run();
   expect(result.state).toEqual({
-    S0: 0, S1: 1, S2: 0, S3: 1, Cout: 1,
+    S0: 0,
+    S1: 1,
+    S2: 0,
+    S3: 1,
+    Cout: 1,
   });
 });

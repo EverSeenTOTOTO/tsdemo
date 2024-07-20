@@ -1,5 +1,4 @@
 /* eslint-disable class-methods-use-this */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { IContext, Node, Slot } from '@/graph';
 import { UnaryNode, BinaryNode } from '@/graph/nodes';
 
@@ -9,7 +8,7 @@ export class NotGate extends UnaryNode<1 | 0, 1 | 0> {
     const connections = ctx.getConnectionsByFrom(output);
     const result = value === 0 ? 1 : 0;
 
-    connections.forEach((c) => {
+    connections.forEach(c => {
       ctx.executor.submit({
         description: `${value} -> ${input} [${this.name}] ${output.name} -> ${result} -> [${c.to.node.name}] ${c.to.name}`,
         action() {
@@ -32,7 +31,7 @@ export class AndGate extends BinaryGate {
     const connections = ctx.getConnectionsByFrom(output);
     const result = this.ltemp && this.rtemp;
 
-    connections.forEach((c) => {
+    connections.forEach(c => {
       ctx.executor.submit({
         description: `${value} -> ${input} [${this.name}] ${output.name} -> ${result} -> [${c.to.node.name}] ${c.to.name}`,
         action: () => {
@@ -49,7 +48,7 @@ export class OrGate extends BinaryGate {
     const connections = ctx.getConnectionsByFrom(output);
     const result = this.ltemp || this.rtemp;
 
-    connections.forEach((c) => {
+    connections.forEach(c => {
       ctx.executor.submit({
         description: `${value} -> ${input} [${this.name}] ${output.name} -> ${result} -> [${c.to.node.name}] ${c.to.name}`,
         action: () => {
@@ -64,9 +63,10 @@ export class XorGate extends BinaryGate {
   handle(input: 'lhs' | 'rhs', value: number, ctx: IContext) {
     const output = this.getSlot('output')!;
     const connections = ctx.getConnectionsByFrom(output);
-    const result = this.ltemp! + this.rtemp! > 1 ? 0 : this.ltemp! + this.rtemp!;
+    const result =
+      this.ltemp! + this.rtemp! > 1 ? 0 : this.ltemp! + this.rtemp!;
 
-    connections.forEach((c) => {
+    connections.forEach(c => {
       ctx.executor.submit({
         description: `${value} -> ${input} [${this.name}] ${output.name} -> ${result} -> [${c.to.node.name}] ${c.to.name}`,
         action: () => {
@@ -83,7 +83,7 @@ export class AndNotGate extends BinaryGate {
     const connections = ctx.getConnectionsByFrom(output);
     const result = !(this.ltemp && this.rtemp) ? 1 : 0;
 
-    connections.forEach((c) => {
+    connections.forEach(c => {
       ctx.executor.submit({
         description: `${value} -> ${input} [${this.name}] ${output.name} -> ${result} -> [${c.to.node.name}] ${c.to.name}`,
         action: () => {
@@ -100,7 +100,7 @@ export class OrNotGate extends BinaryGate {
     const connections = ctx.getConnectionsByFrom(output);
     const result = !(this.ltemp || this.rtemp) ? 1 : 0;
 
-    connections.forEach((c) => {
+    connections.forEach(c => {
       ctx.executor.submit({
         description: `${value} -> ${input} [${this.name}] ${output.name} -> ${result} -> [${c.to.node.name}] ${c.to.name}`,
         action: () => {
@@ -131,12 +131,13 @@ export class TGate extends Node<'ctrl' | 'lhs' | 'rhs', 1 | 0, 1 | 0> {
     if (input === 'rhs') this.value = ['rhs', value];
     if (input === 'ctrl') this.ctrl = value;
 
-    if (this.ctrl === 1 && this.value) { // lhs 作为使能端
+    if (this.ctrl === 1 && this.value) {
+      // lhs 作为使能端
       const output = this.getSlot(this.value[0] === 'lhs' ? 'rhs' : 'lhs')!; // 双向器件
       const connections = ctx.getConnectionsByFrom(output);
       const result = this.value[1];
 
-      connections.forEach((c) => {
+      connections.forEach(c => {
         ctx.executor.submit({
           description: `${value} -> ${input} [${this.name}] ${output.name} -> ${result} -> [${c.to.node.name}] ${c.to.name}`,
           action: () => {

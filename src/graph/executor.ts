@@ -1,5 +1,5 @@
-import { call, ExtendArray as Queue } from '@/utils';
 import EventEmitter from 'events';
+import { call, ExtendArray as Queue } from '@/utils';
 import { IContext, IExecutor, Task } from './types';
 
 export class Executor extends EventEmitter implements IExecutor {
@@ -40,7 +40,12 @@ export class Executor extends EventEmitter implements IExecutor {
     // 为了复用step，在pending中间加一个$标记
     const sym = Symbol('$');
 
-    this.pending.push({ action() { }, description: sym });
+    this.pending.push({
+      action() {
+        /*TODO*/
+      },
+      description: sym,
+    });
 
     while (this.pending.head()?.description !== sym) {
       await this.step(ctx);

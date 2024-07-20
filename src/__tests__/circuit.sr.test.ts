@@ -1,5 +1,9 @@
 import {
-  createSR, createD, createDT, createJK, createGSR,
+  createSR,
+  createD,
+  createDT,
+  createJK,
+  createGSR,
 } from '@/electron/circuit';
 import { Executor } from '@/graph/executor';
 import { Context } from '@/graph/index';

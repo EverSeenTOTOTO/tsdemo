@@ -8,9 +8,14 @@ import {
 } from '@/FiniteStateMachine';
 
 // 并运算
-export const union = (a: NondeterministicFiniteAutomachine, b: NondeterministicFiniteAutomachine) => {
+export const union = (
+  a: NondeterministicFiniteAutomachine,
+  b: NondeterministicFiniteAutomachine,
+) => {
   // 新的起始状态
-  const initialState = new State(`^${a.initialState.name}|${b.initialState.name}`);
+  const initialState = new State(
+    `^${a.initialState.name}|${b.initialState.name}`,
+  );
   // 新的接受状态是a和b的接受状态并集
   const finalStates = StateSet.union(a.finalStates, b.finalStates);
 
@@ -29,7 +34,8 @@ export const union = (a: NondeterministicFiniteAutomachine, b: NondeterministicF
     const transform = new NFATransform();
 
     for (const input of inputSet) {
-      if (state === initialState) { // 如果是新的起始状态，经过EPSILON到达a和b的起始状态
+      if (state === initialState) {
+        // 如果是新的起始状态，经过EPSILON到达a和b的起始状态
         if (input === Input.EPSILON) {
           transform.set(input, new StateSet([a.initialState, b.initialState]));
         } else {
@@ -55,7 +61,10 @@ export const union = (a: NondeterministicFiniteAutomachine, b: NondeterministicF
 };
 
 // 连接运算
-export const concat = (a: NondeterministicFiniteAutomachine, b: NondeterministicFiniteAutomachine) => {
+export const concat = (
+  a: NondeterministicFiniteAutomachine,
+  b: NondeterministicFiniteAutomachine,
+) => {
   const inputSet = StateSet.union(a.inputSet, b.inputSet);
 
   inputSet.add(Input.EPSILON);
@@ -69,7 +78,10 @@ export const concat = (a: NondeterministicFiniteAutomachine, b: Nondeterministic
     const transform = new NFATransform();
 
     for (const input of inputSet) {
-      const nextStates = StateSet.union(a.next(input, state), b.next(input, state));
+      const nextStates = StateSet.union(
+        a.next(input, state),
+        b.next(input, state),
+      );
 
       if (a.finalStates.has(state) && input === Input.EPSILON) {
         // 针对a的每一个接受状态，增加一个EPSILON到q2的起始状态
@@ -117,12 +129,14 @@ export const star = (nfa: NondeterministicFiniteAutomachine) => {
 
     for (const input of inputSet) {
       if (state === initialState) {
-        if (input === Input.EPSILON) { // 新的起始状态经过EPSILON到达旧的起始状态
+        if (input === Input.EPSILON) {
+          // 新的起始状态经过EPSILON到达旧的起始状态
           transform.set(input, new StateSet([nfa.initialState]));
         } else {
           transform.set(input, StateSet.None);
         }
-      } else if (nfa.finalStates.has(state) && input === Input.EPSILON) { // 给旧的接受状态增加经过EPSILON到达旧的起始状态的转换
+      } else if (nfa.finalStates.has(state) && input === Input.EPSILON) {
+        // 给旧的接受状态增加经过EPSILON到达旧的起始状态的转换
         const nextStates = nfa.next(input, state);
 
         nextStates.add(nfa.initialState);

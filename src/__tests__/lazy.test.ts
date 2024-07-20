@@ -1,12 +1,4 @@
-/* eslint-disable @typescript-eslint/no-use-before-define */
-/* eslint-disable @typescript-eslint/naming-convention */
-import {
-  cons,
-  car,
-  cdr,
-  list_map,
-  list_get,
-} from '../SICP/lazy';
+import { cons, car, cdr, list_map, list_get } from '../SICP/lazy';
 
 const list_add = (a: any, b: any): any => {
   return cons(car(a) + car(b), () => list_add(cdr(a), cdr(b)));
@@ -47,6 +39,11 @@ describe('test lazy', () => {
       return y;
     };
 
-    expect(list_get(solve((y: any) => y, 1, 0.001), 5)).toBeGreaterThanOrEqual(1);
+    expect(
+      list_get(
+        solve((y: any) => y, 1, 0.001),
+        5,
+      ),
+    ).toBeGreaterThanOrEqual(1);
   });
 });

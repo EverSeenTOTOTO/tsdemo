@@ -57,17 +57,17 @@ export class Pending<T> {
   }
 
   map<R>(f: (value: T) => R) {
-    return new Pending<R>((cb) => {
-      this.task((value) => {
+    return new Pending<R>(cb => {
+      this.task(value => {
         cb(f(value));
       });
     });
   }
 
   ap<R>(functor: Pending<(value: T) => R>) {
-    return new Pending<R>((cb) => {
-      this.task((value) => {
-        functor.task((fnValue) => {
+    return new Pending<R>(cb => {
+      this.task(value => {
+        functor.task(fnValue => {
           cb(fnValue(value));
         });
       });
@@ -75,20 +75,20 @@ export class Pending<T> {
   }
 
   chain<R>(f: (value: T) => Pending<R>) {
-    return new Pending<R>((cb) => {
-      this.task((value) => {
+    return new Pending<R>(cb => {
+      this.task(value => {
         f(value).task(cb);
       });
     });
   }
 
   static of<R>(value: R) {
-    return new Pending<R>((cb) => cb(value));
+    return new Pending<R>(cb => cb(value));
   }
 
   equals(other: Pending<T>) {
-    return new Pending<boolean>((cb) => {
-      this.task((lhs) => other.task((rhs) => cb(lhs === rhs)));
+    return new Pending<boolean>(cb => {
+      this.task(lhs => other.task(rhs => cb(lhs === rhs)));
     });
   }
 
@@ -97,6 +97,8 @@ export class Pending<T> {
   }
 
   then<R>(done: (value: T) => R): R extends Pending<unknown> ? R : Pending<R> {
-    return this.map(done).chain((value) => (value instanceof Pending ? value : Pending.of(value))) as any;
+    return this.map(done).chain(value =>
+      value instanceof Pending ? value : Pending.of(value),
+    ) as any;
   }
 }

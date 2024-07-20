@@ -2,11 +2,9 @@ import { IContext } from '@/graph';
 import { PipeNode } from '@/graph/nodes';
 import { uuid } from '@/utils';
 import { createComponent } from './component';
-import {
-  AndGate, NotGate, OrGate, OrNotGate, TGate,
-} from './gate';
+import { AndGate, NotGate, OrGate, OrNotGate, TGate } from './gate';
 
-class PipeGate extends PipeNode<1 | 0, 1 | 0> { }
+class PipeGate extends PipeNode<1 | 0, 1 | 0> {}
 
 // CD4532 优先编码器
 export function createCD4532(ctx: IContext) {
@@ -22,10 +20,22 @@ export function createCD4532(ctx: IContext) {
   const i7 = `I7${seed}`;
 
   const Y2 = createComponent(`${e}(${i7}+${i6}+${i5}+${i4})`, ctx);
-  const Y1 = createComponent(`${e}(${i7}+${i6}+~${i5}~${i4}${i3}+~${i5}~${i4}${i2})`, ctx);
-  const Y0 = createComponent(`${e}(${i7}+~${i6}${i5}+~${i6}~${i4}${i3}+~${i6}~${i4}~${i2}${i1})`, ctx);
-  const EO = createComponent(`${e}(~${i7}~${i6}~${i5}~I4~${i3}~${i2}~${i1}~${i0})`, ctx);
-  const GS = createComponent(`${e}(${i7}+${i6}+${i5}+${i4}+${i3}+${i2}+${i1}+${i0})`, ctx);
+  const Y1 = createComponent(
+    `${e}(${i7}+${i6}+~${i5}~${i4}${i3}+~${i5}~${i4}${i2})`,
+    ctx,
+  );
+  const Y0 = createComponent(
+    `${e}(${i7}+~${i6}${i5}+~${i6}~${i4}${i3}+~${i6}~${i4}~${i2}${i1})`,
+    ctx,
+  );
+  const EO = createComponent(
+    `${e}(~${i7}~${i6}~${i5}~I4~${i3}~${i2}~${i1}~${i0})`,
+    ctx,
+  );
+  const GS = createComponent(
+    `${e}(${i7}+${i6}+${i5}+${i4}+${i3}+${i2}+${i1}+${i0})`,
+    ctx,
+  );
 
   const EI = ctx.getNode(e)!;
   const I0 = ctx.getNode(i0)!;
@@ -38,7 +48,20 @@ export function createCD4532(ctx: IContext) {
   const I7 = ctx.getNode(i7)!;
 
   return {
-    Y2, Y1, Y0, EO, GS, EI, I0, I1, I2, I3, I4, I5, I6, I7,
+    Y2,
+    Y1,
+    Y0,
+    EO,
+    GS,
+    EI,
+    I0,
+    I1,
+    I2,
+    I3,
+    I4,
+    I5,
+    I6,
+    I7,
   };
 }
 
@@ -67,7 +90,20 @@ export function createBCD8421(ctx: IContext) {
   const A3 = ctx.getNode(a3)!;
 
   return {
-    Y0, Y1, Y2, Y3, Y4, Y5, Y6, Y7, Y8, Y9, A0, A1, A2, A3,
+    Y0,
+    Y1,
+    Y2,
+    Y3,
+    Y4,
+    Y5,
+    Y6,
+    Y7,
+    Y8,
+    Y9,
+    A0,
+    A1,
+    A2,
+    A3,
   };
 }
 
@@ -84,7 +120,10 @@ export function createS2(ctx: IContext) {
   const D1 = ctx.getNode(d1)!;
 
   return {
-    Y, S, D0, D1,
+    Y,
+    S,
+    D0,
+    D1,
   };
 }
 
@@ -98,7 +137,10 @@ export function createS4(ctx: IContext) {
   const d2 = `D2${seed}`;
   const d3 = `D3${seed}`;
 
-  const Y = createComponent(`~${s1}~${s0}${d0}+~${s1}${s0}${d1}+${s1}~${s0}${d2}+${s1}${s0}${d3}`, ctx);
+  const Y = createComponent(
+    `~${s1}~${s0}${d0}+~${s1}${s0}${d1}+${s1}~${s0}${d2}+${s1}${s0}${d3}`,
+    ctx,
+  );
 
   const S0 = ctx.getNode(s0)!;
   const S1 = ctx.getNode(s1)!;
@@ -108,7 +150,13 @@ export function createS4(ctx: IContext) {
   const D3 = ctx.getNode(d3)!;
 
   return {
-    Y, S0, S1, D0, D1, D2, D3,
+    Y,
+    S0,
+    S1,
+    D0,
+    D1,
+    D2,
+    D3,
   };
 }
 
@@ -125,7 +173,10 @@ export function createHalfAdder(ctx: IContext) {
   const B = ctx.getNode(b)!;
 
   return {
-    S, C, A, B,
+    S,
+    C,
+    A,
+    B,
   };
 }
 
@@ -136,7 +187,10 @@ export function createFullAdder(ctx: IContext) {
   const b = `B${seed}`;
   const c = `C${seed}`;
 
-  const S = createComponent(`~${a}~${b}${c}+~${a}${b}~${c}+${a}~${b}~${c}+${a}${b}${c}`, ctx);
+  const S = createComponent(
+    `~${a}~${b}${c}+~${a}${b}~${c}+${a}~${b}~${c}+${a}${b}${c}`,
+    ctx,
+  );
   const Cout = createComponent(`${a}${b}+${a}~${b}${c}+~${a}${b}${c}`, ctx);
 
   const A = ctx.getNode(a)!;
@@ -144,7 +198,11 @@ export function createFullAdder(ctx: IContext) {
   const Cin = ctx.getNode(c)!;
 
   return {
-    S, Cout, A, B, Cin,
+    S,
+    Cout,
+    A,
+    B,
+    Cin,
   };
 }
 
@@ -188,7 +246,10 @@ export function createSR(ctx: IContext) {
   ctx.connect(G2, 'output', N, 'input');
 
   return {
-    R, S, Q, N,
+    R,
+    S,
+    Q,
+    N,
   };
 }
 
@@ -213,7 +274,11 @@ export function createGSR(ctx: IContext) {
   ctx.connect(G3, 'output', SR.S, 'input');
 
   return {
-    R, E, S, Q: SR.Q, N: SR.N,
+    R,
+    E,
+    S,
+    Q: SR.Q,
+    N: SR.N,
   };
 }
 
@@ -244,7 +309,11 @@ function createTGD(ctx: IContext) {
   ctx.connect(TG2, 'lhs', G1, 'input');
 
   return {
-    D, Q, N, TG1, TG2,
+    D,
+    Q,
+    N,
+    TG1,
+    TG2,
   };
 }
 
@@ -265,7 +334,10 @@ export function createD(ctx: IContext) {
   ctx.connect(G4, 'output', D.TG1, 'ctrl');
 
   return {
-    E, D: D.D, Q: D.Q, N: D.N,
+    E,
+    D: D.D,
+    Q: D.Q,
+    N: D.N,
   };
 }
 
@@ -293,7 +365,10 @@ export function createDT(ctx: IContext) {
   ctx.connect(G6, 'output', DS.TG1, 'ctrl');
 
   return {
-    E, D: DM.D, Q: DS.N, N,
+    E,
+    D: DM.D,
+    Q: DS.N,
+    N,
   };
 }
 
@@ -321,6 +396,10 @@ export function createJK(ctx: IContext) {
   ctx.connect(G4, 'output', D.D, 'input');
 
   return {
-    J, K, Q: D.Q, N: D.N, E: D.E,
+    J,
+    K,
+    Q: D.Q,
+    N: D.N,
+    E: D.E,
   };
 }

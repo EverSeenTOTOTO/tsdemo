@@ -70,10 +70,7 @@ export default [
     ],
     watch: {
       buildDelay: 1000,
-      include: [
-        'src/web/**',
-        'public/**',
-      ],
+      include: ['src/web/**', 'public/**'],
     },
     plugins: [
       ...plugins,

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import {
   Stream,
   stream_car,
@@ -16,16 +15,18 @@ import {
   stream_enumerate_interval,
 } from '../SICP/stream';
 
-const stream_add = (s1: Stream<number>, s2: Stream<number>) => stream_join(s1, s2, (x, y) => x + y);
+const stream_add = (s1: Stream<number>, s2: Stream<number>) =>
+  stream_join(s1, s2, (x, y) => x + y);
 const partial_sum = (s: Stream<number>): Stream<number> => {
   return stream_reduce(stream_cdr(s), stream_car(s), (p, c) => p + c);
 };
 
 describe('test stream', () => {
   it('test construct', () => {
-    const ints = (i: number): Stream<number> => stream_cons(i, () => {
-      return ints(i + 1);
-    });
+    const ints = (i: number): Stream<number> =>
+      stream_cons(i, () => {
+        return ints(i + 1);
+      });
     const s = ints(0);
 
     expect(stream_car(s)).toBe(0);
@@ -41,12 +42,12 @@ describe('test stream', () => {
 
   it('test stream operator', () => {
     const s = stream_enumerate_interval(1, 1);
-    const even = stream_filter(s, (x) => x % 2 === 0);
+    const even = stream_filter(s, x => x % 2 === 0);
 
     expect(stream_get(even, 0)).toBe(2);
     expect(stream_get(even, 999)).toBe(2000);
 
-    const square = stream_map(even, (x) => x ** 2);
+    const square = stream_map(even, x => x ** 2);
 
     expect(stream_get(square, 0)).toBe(4);
     expect(stream_get(square, 99)).toBe(40000);
@@ -70,9 +71,11 @@ describe('test stream', () => {
     expect(stream_get(sums, 3)).toBe(10);
     expect(stream_get(sums, 4)).toBe(15);
 
-    const fibs: Stream<number> = stream_cons(0, () => stream_cons(1, () => {
-      return stream_add(fibs, stream_cdr(fibs));
-    }));
+    const fibs: Stream<number> = stream_cons(0, () =>
+      stream_cons(1, () => {
+        return stream_add(fibs, stream_cdr(fibs));
+      }),
+    );
 
     expect(stream_get(fibs, 3)).toBe(2);
     expect(stream_get(fibs, 10)).toBe(55);
@@ -84,7 +87,7 @@ describe('test stream', () => {
     };
     const sqrt_stream = (x: number): Stream<number> => {
       return stream_cons(1.0, () => {
-        return stream_map(sqrt_stream(x), (guess) => sqrt_improve(guess, x));
+        return stream_map(sqrt_stream(x), guess => sqrt_improve(guess, x));
       });
     };
 
@@ -126,16 +129,20 @@ describe('test stream', () => {
     const s = stream_interleave(ones, zeros);
 
     const arr: number[] = [];
-    stream_foreach(s, (x) => arr.push(x), 4);
+    stream_foreach(s, x => arr.push(x), 4);
 
     expect(arr).toEqual([1, 0, 1, 0, 1]);
   });
 
   it('stream signal', () => {
-    const integral = (integrand: Stream<number>, initial: number, dt: number) => {
+    const integral = (
+      integrand: Stream<number>,
+      initial: number,
+      dt: number,
+    ) => {
       const int: Stream<number> = stream_cons(initial, () => {
         return stream_add(
-          stream_map(integrand, (x) => x * dt),
+          stream_map(integrand, x => x * dt),
           int,
         );
       });
@@ -144,14 +151,15 @@ describe('test stream', () => {
     };
 
     const RC = (R: number, C: number, dt: number) => {
-      return (I: Stream<number>, v0: number):Stream<number> => stream_add(
-        stream_map(I, (x) => x * R),
-        integral(
-          stream_map(I, (x) => x / C),
-          v0,
-          dt,
-        ),
-      );
+      return (I: Stream<number>, v0: number): Stream<number> =>
+        stream_add(
+          stream_map(I, x => x * R),
+          integral(
+            stream_map(I, x => x / C),
+            v0,
+            dt,
+          ),
+        );
     };
 
     const make_rc = RC(5, 1, 0.1);
@@ -163,10 +171,14 @@ describe('test stream', () => {
   });
 
   // 积分器
-  const intergral = (delayedIntergrand: () => Stream<number>, initial: number, dt: number) => {
+  const intergral = (
+    delayedIntergrand: () => Stream<number>,
+    initial: number,
+    dt: number,
+  ) => {
     const int: Stream<number> = stream_cons(initial, () => {
       return stream_add(
-        stream_map(delayedIntergrand(), (x) => x * dt),
+        stream_map(delayedIntergrand(), x => x * dt),
         int,
       );
     });
@@ -182,10 +194,18 @@ describe('test stream', () => {
       return y;
     };
 
-    expect(Math.abs(stream_get(solve((y) => y, 1, 0.001), 1000) - Math.E)).toBeLessThan(0.01);
+    expect(
+      Math.abs(
+        stream_get(
+          solve(y => y, 1, 0.001),
+          1000,
+        ) - Math.E,
+      ),
+    ).toBeLessThan(0.01);
 
     // 一阶RC电路
-    const RC = (R: number, C: number, q0: number, v0: number, dt: number) => solve((Q) => v0 / R - Q / (R * C), q0, dt);
+    const RC = (R: number, C: number, q0: number, v0: number, dt: number) =>
+      solve(Q => v0 / R - Q / (R * C), q0, dt);
     const C = 1;
     const v0 = 1;
     const s1 = RC(5, C, 0, v0, 0.1);
@@ -207,7 +227,8 @@ describe('test stream', () => {
     expect(Math.abs(stream_get(s2, 2000) - C * v0)).toBeLessThan(0.001);
 
     // 简单种群逻辑斯蒂方程
-    const N = (r: number, n0: number, K: number, dt: number) => solve((n: number) => r * n * (1 - n / K), n0, dt);
+    const N = (r: number, n0: number, K: number, dt: number) =>
+      solve((n: number) => r * n * (1 - n / K), n0, dt);
     const K = 50;
     const s = N(2, 10, K, 0.01);
 
@@ -216,14 +237,27 @@ describe('test stream', () => {
   });
 
   it('stream signal delay2', () => {
-    const solve = (f: (dy: number, y: number) => number, dy0: number, y0: number, dt: number) => {
-      const y = intergral(() => {
-        const dy = intergral(() => {
-          return stream_map(dy, (x) => f(x, stream_car(y)));
-        }, dy0, dt);
+    const solve = (
+      f: (dy: number, y: number) => number,
+      dy0: number,
+      y0: number,
+      dt: number,
+    ) => {
+      const y = intergral(
+        () => {
+          const dy = intergral(
+            () => {
+              return stream_map(dy, x => f(x, stream_car(y)));
+            },
+            dy0,
+            dt,
+          );
 
-        return stream_map(y, (x) => f(stream_car(dy), x));
-      }, y0, dt);
+          return stream_map(y, x => f(stream_car(dy), x));
+        },
+        y0,
+        dt,
+      );
 
       return y;
     };

@@ -14,14 +14,7 @@ module.exports = {
   },
   rootDir: '.',
   testEnvironment: 'node',
-  testMatch: [
-    '**/*.test.ts',
-  ],
-  testPathIgnorePatterns: [
-    '/node_modules/',
-  ],
-  transformIgnorePatterns: [
-    '/node_modules/',
-    '\\.pnp\\.[^\\/]+$',
-  ],
+  testMatch: ['**/*.test.ts'],
+  testPathIgnorePatterns: ['/node_modules/'],
+  transformIgnorePatterns: ['/node_modules/', '\\.pnp\\.[^\\/]+$'],
 };

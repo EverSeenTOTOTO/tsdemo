@@ -6,9 +6,7 @@ import {
   NFATransformTable,
   NondeterministicFiniteAutomachine,
 } from '@/FiniteStateMachine';
-import {
-  getNextStates, NFA2DFA, findStateInSubstates,
-} from '@/Transform';
+import { getNextStates, NFA2DFA, findStateInSubstates } from '@/Transform';
 
 describe('test transform', () => {
   const q1 = new State('q1');
@@ -51,19 +49,18 @@ describe('test transform', () => {
 
   test('test getNextStates', () => {
     expect(getNextStates(N, Input.EPSILON, q1).vs()).toEqual([q3, q2]);
-    expect(getNextStates(N, a, q2).vs()).toEqual([
-      q2, q3,
-    ]);
-    expect(getNextStates(N, a, q3).vs()).toEqual([
-      q1, q3, q2,
-    ]);
+    expect(getNextStates(N, a, q2).vs()).toEqual([q2, q3]);
+    expect(getNextStates(N, a, q3).vs()).toEqual([q1, q3, q2]);
   });
 
   test('test NFA2DFA', () => {
     const M = NFA2DFA(N);
 
     const sq2q3 = findStateInSubstates(M.stateSet, new StateSet([q2, q3]));
-    const sq1q2q3 = findStateInSubstates(M.stateSet, new StateSet([q1, q2, q3]));
+    const sq1q2q3 = findStateInSubstates(
+      M.stateSet,
+      new StateSet([q1, q2, q3]),
+    );
 
     expect(M.next(a, sq2q3)).toBe(sq1q2q3);
     expect(M.next(b, sq2q3)).toBe(sq2q3);

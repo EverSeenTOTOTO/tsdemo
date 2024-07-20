@@ -1,4 +1,5 @@
 /* eslint-disable class-methods-use-this */
+// eslint-disable-next-line no-undef
 registerPaint(
   'borderDraw',
   class {
@@ -13,7 +14,7 @@ registerPaint(
       const { width } = size;
       const { height } = size;
       const paths = clipPath.toString().split(',');
-      const cc = (obj) => {
+      const cc = obj => {
         const [x, y] = obj;
 
         let fx = 0;

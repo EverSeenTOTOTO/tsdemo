@@ -8,7 +8,5 @@
     "jest.config.js",
     "rollup.config.js"
   ],
-  "exclude": [
-    "src/**/*.svelte"
-  ]
+  "exclude": ["src/**/*.svelte"]
 }

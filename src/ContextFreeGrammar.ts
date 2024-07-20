@@ -1,12 +1,7 @@
 /* eslint-disable max-classes-per-file */
 import Table from 'cli-table';
 import { Input } from './FiniteStateMachine';
-import {
-  flattern,
-  ExtendMap,
-  ExtendSet,
-  ExtendArray,
-} from './utils';
+import { flattern, ExtendMap, ExtendSet, ExtendArray } from './utils';
 
 export class CFGInput extends Input {
   // 是否是终结符
@@ -19,12 +14,19 @@ export class CFGInput extends Input {
 }
 
 export class CFGRule<T extends CFGInput = CFGInput> extends ExtendArray<T> {
-  static isEpsilonRule<P extends CFGInput = CFGInput>(rule: CFGRule<P>): boolean {
+  static isEpsilonRule<P extends CFGInput = CFGInput>(
+    rule: CFGRule<P>,
+  ): boolean {
     return rule.length === 1 && rule[0] === CFGInput.EPSILON;
   }
 }
-export class CFGRuleSet<T extends CFGInput = CFGInput> extends ExtendSet<CFGRule<T>> {}
-export class CFGDerivations<T extends CFGInput = CFGInput> extends ExtendMap<T, CFGRuleSet<T>> {}
+export class CFGRuleSet<T extends CFGInput = CFGInput> extends ExtendSet<
+  CFGRule<T>
+> {}
+export class CFGDerivations<T extends CFGInput = CFGInput> extends ExtendMap<
+  T,
+  CFGRuleSet<T>
+> {}
 
 export class ContextFreeGrammar<T extends CFGInput = CFGInput> {
   name: string;
@@ -43,47 +45,70 @@ export class ContextFreeGrammar<T extends CFGInput = CFGInput> {
     return new ExtendSet<T>(
       [
         ...this.derivations.ks(),
-        ...flattern(this.derivations.ks().map((nt) => {
-          return this.derivations.get(nt)!.vs().map((arr) => {
-            return arr.filter((expr) => expr !== CFGInput.EPSILON && !expr.term);
-          });
-        })),
-      ]
-        .sort((a, b) => {
-          if (this.start === a) {
-            return -1;
-          }
-          if (this.start === b) {
-            return 1;
-          }
-          return a.name > b.name ? 1 : 0;
-        }),
+        ...flattern(
+          this.derivations.ks().map(nt => {
+            return this.derivations
+              .get(nt)!
+              .vs()
+              .map(arr => {
+                return arr.filter(
+                  expr => expr !== CFGInput.EPSILON && !expr.term,
+                );
+              });
+          }),
+        ),
+      ].sort((a, b) => {
+        if (this.start === a) {
+          return -1;
+        }
+        if (this.start === b) {
+          return 1;
+        }
+        return a.name > b.name ? 1 : 0;
+      }),
     );
   }
 
   get Terms() {
     return new ExtendSet<T>(
-      flattern(this.derivations.ks().map((nt) => {
-        return this.derivations.get(nt)!.vs().map((arr) => {
-          return arr.filter((expr) => expr !== CFGInput.EPSILON && expr.term);
-        });
-      }))
-        .sort((a, b) => (a.name < b.name ? -1 : 0)),
+      flattern(
+        this.derivations.ks().map(nt => {
+          return this.derivations
+            .get(nt)!
+            .vs()
+            .map(arr => {
+              return arr.filter(expr => expr !== CFGInput.EPSILON && expr.term);
+            });
+        }),
+      ).sort((a, b) => (a.name < b.name ? -1 : 0)),
     );
   }
 
   toString() {
-    const derivings = this.derivations.ks().map((k) => {
+    const derivings = this.derivations.ks().map(k => {
       const v = this.derivations.get(k)!;
-      return `${k.name} -> ${v.vs().map((arr) => {
-        return arr.map((expr) => expr.name).join('');
-      }).join(' | ')}`;
+      return `${k.name} -> ${v
+        .vs()
+        .map(arr => {
+          return arr.map(expr => expr.name).join('');
+        })
+        .join(' | ')}`;
     });
     const table = new Table({
       rows: [
         ['CFG', this.name],
-        ['NonTerms', this.NonTerms.vs().map((nt) => nt.name).join(', ')],
-        ['Terms', this.Terms.vs().map((t) => t.name).join(', ')],
+        [
+          'NonTerms',
+          this.NonTerms.vs()
+            .map(nt => nt.name)
+            .join(', '),
+        ],
+        [
+          'Terms',
+          this.Terms.vs()
+            .map(t => t.name)
+            .join(', '),
+        ],
         ['Start', this.start.name],
         ['Derivation', derivings.join('\n')],
       ],

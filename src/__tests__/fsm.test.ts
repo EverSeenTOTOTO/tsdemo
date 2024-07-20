@@ -69,22 +69,24 @@ describe('FiniteStateMachine', () => {
 
     expect(currentState).toBe(q3);
 
-    expect(accept(M, [
-      i1,
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      // eslint-disable-next-line prefer-spread
-      ...Array.apply(null, { length: 1000 }).map(() => i0),
-      i0,
-    ])).toBe(false);
-    expect(accept(M, [
-      i1,
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      // eslint-disable-next-line prefer-spread
-      ...Array.apply(null, { length: 1000 }).map(() => i0),
-      i1,
-    ])).toBe(true);
+    expect(
+      accept(M, [
+        i1,
+        // @ts-ignore
+        // eslint-disable-next-line prefer-spread
+        ...Array.apply(null, { length: 1000 }).map(() => i0),
+        i0,
+      ]),
+    ).toBe(false);
+    expect(
+      accept(M, [
+        i1,
+        // @ts-ignore
+        // eslint-disable-next-line prefer-spread
+        ...Array.apply(null, { length: 1000 }).map(() => i0),
+        i1,
+      ]),
+    ).toBe(true);
   });
 
   test('test NFA', () => {
@@ -106,18 +108,8 @@ describe('FiniteStateMachine', () => {
             [Input.EPSILON, new StateSet([q3])],
           ]),
         ],
-        [
-          q3,
-          new NFATransform([
-            [i1, new StateSet([q1])],
-          ]),
-        ],
-        [
-          q4,
-          new NFATransform([
-            [i1, new StateSet([q2])],
-          ]),
-        ],
+        [q3, new NFATransform([[i1, new StateSet([q1])]])],
+        [q4, new NFATransform([[i1, new StateSet([q2])]])],
       ]),
       q1,
       new StateSet([q4]),
@@ -127,7 +119,6 @@ describe('FiniteStateMachine', () => {
     expect(M.stateSet.vs()).toEqual([q1, q2, q3, q4]);
 
     const inputs = [
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       // eslint-disable-next-line prefer-spread
       ...Array.apply(null, { length: 1000 }).map(() => i1),

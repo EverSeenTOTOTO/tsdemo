@@ -1,14 +1,17 @@
 import { Machine } from '../SICP/machine';
 
-it('test add', (done) => {
+it('test add', done => {
   const machine = new Machine(
     ['a', 'b'],
     [
       ['+', (x: number, y: number) => x + y],
-      ['display', (result) => {
-        expect(result).toBe(3);
-        done();
-      }],
+      [
+        'display',
+        result => {
+          expect(result).toBe(3);
+          done();
+        },
+      ],
     ],
     [
       ['assign', 'a', ['const', 1]],
@@ -21,16 +24,19 @@ it('test add', (done) => {
   machine.start();
 });
 
-it('test label', (done) => {
+it('test label', done => {
   const machine = new Machine(
     ['x'],
     [
       ['>=', (x: number, y: number) => x >= y],
       ['+', (x: number, y: number) => x + y],
-      ['display', (result) => {
-        expect(result).toBe(5);
-        done();
-      }],
+      [
+        'display',
+        result => {
+          expect(result).toBe(5);
+          done();
+        },
+      ],
     ],
     // loop until x+=2 >= 4
     [
@@ -48,22 +54,19 @@ it('test label', (done) => {
   machine.start();
 });
 
-it('test gcd', (done) => {
+it('test gcd', done => {
   const machine = new Machine(
     ['a', 'b', 't'],
     [
+      ['%', (x: number, y: number) => x % y],
+      ['=', (x: number, y: number) => x === y],
       [
-        '%',
-        (x: number, y: number) => (x % y),
+        'display',
+        result => {
+          expect(result).toBe(4);
+          done();
+        },
       ],
-      [
-        '=',
-        (x: number, y: number) => x === y,
-      ],
-      ['display', (result) => {
-        expect(result).toBe(4);
-        done();
-      }],
     ],
     [
       ['assign', 'a', ['const', 12]],
@@ -83,17 +86,20 @@ it('test gcd', (done) => {
   machine.start();
 });
 
-it('test fact', (done) => {
+it('test fact', done => {
   const machine = new Machine(
     ['continue', 'n', 'val'],
     [
       ['=', (x: number, y: number) => x === y],
       ['-', (x: number, y: number) => x - y],
       ['*', (x: number, y: number) => x * y],
-      ['display', (result) => {
-        expect(result).toBe(24);
-        done();
-      }],
+      [
+        'display',
+        result => {
+          expect(result).toBe(24);
+          done();
+        },
+      ],
     ],
     [
       ['assign', 'n', ['const', 4]],
@@ -122,17 +128,20 @@ it('test fact', (done) => {
   machine.start();
 });
 
-it('test fib', (done) => {
+it('test fib', done => {
   const machine = new Machine(
     ['n', 'val', 'tmp', 'continue'],
     [
       ['=', (x: number, y: number) => x === y],
       ['+', (x: number, y: number) => x + y],
       ['-', (x: number, y: number) => x - y],
-      ['display', (result) => {
-        expect(result).toBe(13);
-        done();
-      }],
+      [
+        'display',
+        result => {
+          expect(result).toBe(13);
+          done();
+        },
+      ],
     ],
     [
       ['assign', 'n', ['const', 6]],

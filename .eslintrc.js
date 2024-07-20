@@ -4,38 +4,33 @@ module.exports = {
     node: true,
     'jest/globals': true,
   },
-  extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'airbnb-typescript/base',
-  ],
+  extends: ['eslint:recommended', 'plugin:prettier/recommended'],
   parser: '@typescript-eslint/parser',
+  plugins: ['jest'],
   parserOptions: {
     ecmaVersion: 12,
     sourceType: 'module',
     project: `${__dirname}/tsconfig.eslint.json`,
   },
-  plugins: [
-    '@typescript-eslint',
-    'jest',
-  ],
   rules: {
     'no-console': 'off',
     'no-continue': 'off',
     'no-plusplus': 'off',
     'no-nested-ternary': 'off',
     'max-len': 'off',
-    'arrow-body-style': 'off',
     'no-await-in-loop': 'off',
     'no-restricted-syntax': 'off',
     'max-classes-per-file': 'off',
     'import/prefer-default-export': 'off',
-    '@typescript-eslint/no-explicit-any': 'off',
-    '@typescript-eslint/no-use-before-define': 'off',
-    '@typescript-eslint/no-non-null-assertion': 'off',
-    '@typescript-eslint/explicit-module-boundary-types': 'off',
+    'no-unused-vars': 'warn',
   },
   overrides: [
+    {
+      files: ['src/**/*.ts'],
+      rules: {
+        'no-dupe-class-members': 'off',
+      },
+    },
     {
       files: ['src/web/**/*.ts'],
       env: {

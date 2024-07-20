@@ -1,10 +1,15 @@
 /* eslint-disable max-classes-per-file */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { IContext, Node } from '@/graph';
 import { PipeNode } from '@/graph/nodes';
 import { AndGate, NotGate, OrGate } from './gate';
 import {
-  parseExpr, Item, IdItem, PareItem, NotItem, AndItem, OrItem,
+  parseExpr,
+  Item,
+  IdItem,
+  PareItem,
+  NotItem,
+  AndItem,
+  OrItem,
 } from './parse';
 
 export function createComponent(source: string, ctx: IContext) {

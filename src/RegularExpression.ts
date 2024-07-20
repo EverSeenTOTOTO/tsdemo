@@ -47,9 +47,7 @@ export class LiteralRegularExpression implements RegularExpression {
         new NFATransformTable([
           [
             initialState,
-            new NFATransform([
-              [this.source, new StateSet([finalState])],
-            ]),
+            new NFATransform([[this.source, new StateSet([finalState])]]),
           ],
         ]),
         initialState,
@@ -81,9 +79,7 @@ export class EpsilonRegularExpression implements RegularExpression {
         new NFATransformTable([
           [
             initialState,
-            new NFATransform([
-              [Input.EPSILON, new StateSet([finalState])],
-            ]),
+            new NFATransform([[Input.EPSILON, new StateSet([finalState])]]),
           ],
         ]),
         initialState,
@@ -249,7 +245,6 @@ export const DFA2GNFA = (dfa: DeterministicFinitAutomachine) => {
   // 新的终止状态
   const finalState = new State(`${dfa.name}$`);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const transformTable = new NFATransformTable<State, GNFAInput>([
     [
       initialState,
@@ -260,7 +255,7 @@ export const DFA2GNFA = (dfa: DeterministicFinitAutomachine) => {
         ],
       ]),
     ],
-    ...dfa.finalStates.vs().map((state) => {
+    ...(dfa.finalStates.vs().map(state => {
       return [
         state,
         new NFATransform([
@@ -270,7 +265,7 @@ export const DFA2GNFA = (dfa: DeterministicFinitAutomachine) => {
           ],
         ]),
       ];
-    }) as [State, NFATransform<State, GNFAInput>][],
+    }) as [State, NFATransform<State, GNFAInput>][]),
   ]);
 
   // 如果两个状态之间有多个同向箭头，那么使用其并集代替
@@ -280,7 +275,11 @@ export const DFA2GNFA = (dfa: DeterministicFinitAutomachine) => {
 
       for (const input of dfa.inputSet) {
         if (dfa.next(input, q1) === q2) {
-          inputs.push(input === Input.EPSILON ? new EpsilonRegularExpression() : new LiteralRegularExpression(input));
+          inputs.push(
+            input === Input.EPSILON
+              ? new EpsilonRegularExpression()
+              : new LiteralRegularExpression(input),
+          );
         }
       }
 
@@ -306,13 +305,12 @@ export const DFA2GNFA = (dfa: DeterministicFinitAutomachine) => {
 };
 
 export const DFA2Regex = (dfa: DeterministicFinitAutomachine) => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const gnfa = DFA2GNFA(dfa);
 
   const findRegex = (qa: State, qb: State) => {
     const transform = gnfa.transforms.get(qa);
 
-    return transform?.ks().find((i) => transform.get(i)?.has(qb))?.regex;
+    return transform?.ks().find(i => transform.get(i)?.has(qb))?.regex;
   };
 
   const removeState = (qx: State) => {
@@ -343,27 +341,36 @@ export const DFA2Regex = (dfa: DeterministicFinitAutomachine) => {
     for (const qx of gnfa.stateSet) {
       // 选择一个所有不是起始和结束状态的状态qx
       if (qx === gnfa.initialState || gnfa.isFinal(qx)) continue;
-      for (const q1 of gnfa.stateSet) { // 任选一个不是结束状态和qx的q1，GNFA的结束状态无转换
+      for (const q1 of gnfa.stateSet) {
+        // 任选一个不是结束状态和qx的q1，GNFA的结束状态无转换
         if (q1 === qx || gnfa.isFinal(q1)) continue;
-        for (const q2 of gnfa.stateSet) { // 任选一个不是qx的q2
+        for (const q2 of gnfa.stateSet) {
+          // 任选一个不是qx的q2
           if (q2 === qx) continue;
           const R1 = findRegex(q1, qx);
           const R2 = findRegex(qx, q2);
-          let R:RegularExpression|undefined;
+          let R: RegularExpression | undefined;
 
           if (R1 && R2) {
             const R3 = findRegex(qx, qx);
             const R4 = findRegex(q1, q2);
 
             R = R3
-              ? new ConcatRegularExpression(new ConcatRegularExpression(R1, new StarRegularExpression(R3)), R2)
+              ? new ConcatRegularExpression(
+                  new ConcatRegularExpression(
+                    R1,
+                    new StarRegularExpression(R3),
+                  ),
+                  R2,
+                )
               : new ConcatRegularExpression(R1, R2);
             R = R4 ? new UnionRegularExpression(R, R4) : R;
 
             if (R) {
               const transform = gnfa.transforms.get(q1) ?? new NFATransform();
 
-              if (R4) { // 如果R4存在，新的transform需取代之
+              if (R4) {
+                // 如果R4存在，新的transform需取代之
                 for (const input of transform.ks()) {
                   if (transform.get(input)?.has(q2)) {
                     transform.delete(input);
