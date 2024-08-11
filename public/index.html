@@ -1,46 +1,42 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, minimal-ui"
-    />
-    <meta name="theme-color" content="#f60" />
-    <!-- 一些ios手机会自动将手机号转为链接，可能导致前后端渲染结果不一致 -->
-    <meta name="format-detection" content="telephone=no" />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/normalize.css@8.0.1/normalize.css"
-    />
-  </head>
 
-  <body>
-    <script>
-      (function () {
-        var throttle = function (type, name, obj) {
-          obj = obj || window;
-          var running = false;
-          var func = function () {
-            if (running) {
-              return;
-            }
-            running = true;
-            requestAnimationFrame(function () {
-              obj.dispatchEvent(new CustomEvent(name));
-              running = false;
-            });
-          };
-          obj.addEventListener(type, func);
+<head>
+  <meta charset="utf-8" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui" />
+  <meta name="theme-color" content="#f60" />
+  <!-- 一些ios手机会自动将手机号转为链接，可能导致前后端渲染结果不一致 -->
+  <meta name="format-detection" content="telephone=no" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/normalize.css@8.0.1/normalize.css" />
+</head>
+
+<body>
+  <script>
+    (function () {
+      var throttle = function (type, name, obj) {
+        obj = obj || window;
+        var running = false;
+        var func = function () {
+          if (running) {
+            return;
+          }
+          running = true;
+          requestAnimationFrame(function () {
+            obj.dispatchEvent(new CustomEvent(name));
+            running = false;
+          });
         };
+        obj.addEventListener(type, func);
+      };
 
-        /* init - you can init any event */
-        throttle('resize', 'optimizedResize');
-      })();
-    </script>
-    <script src="app.js"></script>
-  </body>
+      /* init - you can init any event */
+      throttle('resize', 'optimizedResize');
+    })();
+  </script>
+  <script src="app.js"></script>
+</body>
+
 </html>

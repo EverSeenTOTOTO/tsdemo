@@ -22,7 +22,7 @@ module.exports = {
     'no-restricted-syntax': 'off',
     'max-classes-per-file': 'off',
     'import/prefer-default-export': 'off',
-    'no-unused-vars': 'warn',
+    'no-unused-vars': 'off',
   },
   overrides: [
     {
